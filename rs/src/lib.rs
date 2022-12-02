@@ -1,4 +1,5 @@
 mod day1;
+mod day2;
 
 use yaah::{aoc_lib, aoc_year};
 
