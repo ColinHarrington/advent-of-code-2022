@@ -85,7 +85,7 @@ mod test {
     /// * The fifth Elf is carrying one food item with 10000 Calories.
     #[test]
     fn example_input() {
-        let elves = gen(EXAMPLE);
+        let elves: Vec<Elf> = gen(EXAMPLE);
 
         let first = &elves[0];
         assert_eq!(vec![1000, 2000, 3000], first.calories);
