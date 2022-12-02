@@ -3,9 +3,9 @@ use std::num::ParseIntError;
 use std::str::FromStr;
 use yaah::*;
 
-#[derive(Debug,PartialEq,Clone)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Elf {
-    pub calories:     Vec<i32>,
+    pub calories: Vec<i32>,
 }
 
 impl Elf {
@@ -25,7 +25,6 @@ impl FromStr for Elf {
 
 impl Eq for Elf {}
 
-
 impl Ord for Elf {
     fn cmp(&self, other: &Self) -> Ordering {
         self.total_calories().cmp(&other.total_calories())
@@ -39,12 +38,15 @@ impl PartialOrd for Elf {
 
 #[aoc_generator(day1)]
 fn gen(input: &'static str) -> Vec<Elf> {
-    input.split_terminator("\n\n").filter_map(|s| s.parse().ok()).collect()
+    input
+        .split_terminator("\n\n")
+        .filter_map(|s| s.parse().ok())
+        .collect()
 }
 
 #[aoc(day1, part1)]
 fn solve_part1(elves: &[Elf]) -> Option<i32> {
-    elves.iter().map(|e| e.total_calories() ).max()
+    elves.iter().map(|e| e.total_calories()).max()
 }
 
 #[aoc(day1, part2)]
@@ -56,8 +58,8 @@ fn solve_part2(all_elves: &[Elf]) -> Option<i32> {
 
 #[cfg(test)]
 mod test {
-    use crate::day1::{Elf, solve_part1};
-    use super::{gen};
+    use super::gen;
+    use crate::day1::{solve_part1, Elf};
 
     const EXAMPLE: &str = r"1000
 2000
