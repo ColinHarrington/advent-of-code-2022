@@ -29,15 +29,13 @@ fn gen_two(input: &'static str) -> Vec<String> {
 }
 
 #[aoc(day3, part2)]
-fn solve_part2(lines: &Vec<String>) -> Option<i32> {
-    Some(
-        lines
-            .chunks(3)
-            .map(|c| c.to_vec())
-            .map(common_item)
-            .map(item_type_value)
-            .sum()
-    )
+fn solve_part2(lines: &Vec<String>) -> i32 {
+    lines
+        .chunks(3)
+        .map(|c| c.to_vec())
+        .map(common_item)
+        .map(item_type_value)
+        .sum()
 }
 
 #[derive(Debug)]
@@ -196,6 +194,6 @@ CrZsJsPPZsGzwwsLwLmpwMDw";
         let group2 = lines[3..].to_vec();
         assert_eq!('Z', common_item(group2));
 
-        assert_eq!(Some(70),solve_part2(&lines))
+        assert_eq!(70, solve_part2(&lines))
     }
 }
