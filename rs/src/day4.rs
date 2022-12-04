@@ -2,7 +2,7 @@ use std::ops::{Range, RangeInclusive};
 use itertools::Itertools;
 use yaah::*;
 
-#[aoc_generator(day4, part1)]
+#[aoc_generator(day4)]
 fn gen(input: &'static str) -> Vec<String> {
     input
         .lines()
@@ -15,9 +15,17 @@ fn solve_part1(stringy_pairs: &Vec<String>) -> usize {
     stringy_pairs
         .iter()
         .map(assignment_pair)
-        .filter(|(l, r)|fully_contains(l.clone(), r.clone()))
+        .filter(|(l, r)| fully_contains(l.clone(), r.clone()))
         .count()
+}
 
+#[aoc(day4, part2)]
+fn solve_part2(stringy_pairs: &Vec<String>) -> usize {
+    stringy_pairs
+        .iter()
+        .map(assignment_pair)
+        .filter(|(l, r)| overlap_at_all(l.clone(), r.clone()))
+        .count()
 }
 
 fn assignment_pair(s: &String) -> (RangeInclusive<u32>, RangeInclusive<u32>) {
@@ -34,6 +42,11 @@ pub fn fully_contains(r1: RangeInclusive<u32>, r2: RangeInclusive<u32>) -> bool 
         (r2.contains(r1.start()) && r2.contains(r1.end()))
 }
 
+pub fn overlap_at_all(r1: RangeInclusive<u32>, r2: RangeInclusive<u32>) -> bool {
+    r1.contains(r2.start()) || r1.contains(r2.end())
+        || r2.contains(r1.start()) || r2.contains(r1.end())
+}
+
 fn range_from_string(s: String) -> RangeInclusive<u32> {
     let r: Vec<u32> = s.split('-').filter_map(|s| s.parse::<u32>().ok()).collect();
     RangeInclusive::new(r[0], r[1])
@@ -41,7 +54,7 @@ fn range_from_string(s: String) -> RangeInclusive<u32> {
 
 #[cfg(test)]
 mod test {
-    use crate::day4::{assignment_pair, fully_contains, gen, range_from_string, solve_part1};
+    use crate::day4::{assignment_pair, fully_contains, gen, range_from_string, solve_part1, solve_part2};
 
     const EXAMPLE: &str = "2-4,6-8
 2-3,4-5
@@ -52,10 +65,8 @@ mod test {
 
     #[test]
     fn test_range_pair() {
-        // let (r1, r2) = assignment_pair("2-8,3-7");
         let r1 = range_from_string("2-8".to_string());
         let r2 = range_from_string("3-7".to_string());
-        println!("{:?} | {:?}", r1, r2);
 
         assert!(fully_contains(r1, r2));
     }
@@ -66,7 +77,13 @@ mod test {
     /// one Elf in the pair would be exclusively cleaning sections their partner will already be cleaning,
     /// so these seem like the most in need of reconsideration. In this example, there are `2` such pairs.
     #[test]
-    fn example() {
+    fn example_part1() {
         assert_eq!(2, solve_part1(&gen(&EXAMPLE)));
+    }
+
+    /// So, in this example, the number of overlapping assignment pairs is `4`.
+    #[test]
+    fn example_part2() {
+        assert_eq!(4, solve_part2(&gen(&EXAMPLE)));
     }
 }
