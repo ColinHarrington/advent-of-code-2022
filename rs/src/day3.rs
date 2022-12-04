@@ -10,14 +10,12 @@ fn gen(input: &'static str) -> Vec<Rucksack> {
 
 
 #[aoc(day3, part1)]
-fn solve_part1(rucksacks: &Vec<Rucksack>) -> Option<i32> {
-    Some(
-        rucksacks
-            .iter()
-            .map(|rs| rs.shared_item())
-            .map(|c| item_type_value(c))
-            .sum()
-    )
+fn solve_part1(rucksacks: &Vec<Rucksack>) -> i32 {
+    rucksacks
+        .iter()
+        .map(|rs| rs.shared_item())
+        .map(|c| item_type_value(c))
+        .sum()
 }
 
 #[aoc_generator(day3, part2)]
@@ -120,7 +118,7 @@ CrZsJsPPZsGzwwsLwLmpwMDw";
     /// the sum of these is 157.
     #[test]
     fn example_solution() {
-        assert_eq!(Some(157), solve_part1(&gen(EXAMPLE)))
+        assert_eq!(157, solve_part1(&gen(EXAMPLE)))
     }
 
 
