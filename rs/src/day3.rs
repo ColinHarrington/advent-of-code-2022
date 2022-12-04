@@ -1,4 +1,6 @@
+use clap::builder::Str;
 use yaah::*;
+use itertools::Itertools;
 
 #[aoc_generator(day3, part1)]
 fn gen(input: &'static str) -> Vec<Rucksack> {
@@ -19,6 +21,27 @@ fn solve_part1(rucksacks: &Vec<Rucksack>) -> Option<i32> {
             .sum()
     )
 }
+
+#[aoc_generator(day3, part2)]
+fn gen_two(input: &'static str) -> Vec<String> {
+    input
+        .lines()
+        .map(|s| s.to_string())
+        .collect::<Vec<String>>()
+}
+
+#[aoc(day3, part2)]
+fn solve_part2(lines: &Vec<String>) -> Option<i32> {
+    Some(
+        lines
+            .chunks(3)
+            .map(|c| c.to_vec())
+            .map(common_item)
+            .map(item_type_value)
+            .sum()
+    )
+}
+
 #[derive(Debug)]
 pub struct Rucksack {
     pub compartment1: String,
@@ -44,6 +67,14 @@ pub fn item_type_value(c: char) -> i32 {
     }
 }
 
+pub fn common_item(group: Vec<String>) -> char {
+    let (s1, s2, s3) = if let [s1, s2, s3] = group.as_slice() { (s1, s2, s3) } else { panic!() };
+    s1
+        .chars()
+        .find(|c| s2.contains(*c) && s3.contains(*c))
+        .unwrap()
+}
+
 pub fn shared_item(s1: &String, s2: &String) -> char {
     s1
         .chars()
@@ -55,7 +86,7 @@ pub fn shared_item(s1: &String, s2: &String) -> char {
 mod test {
     // use super::gen;
     use std::iter::zip;
-    use crate::day3::{gen, item_type_value, parse_rucksack_items, Rucksack, shared_item, solve_part1};
+    use crate::day3::{common_item, gen, gen_two, item_type_value, Rucksack, shared_item, solve_part1, solve_part2};
     // use super::gen;
 
     const EXAMPLE: &str = r"vJrwpWtwJgWrhcsFMMfFFhFp
@@ -73,7 +104,7 @@ CrZsJsPPZsGzwwsLwLmpwMDw";
         let expected = vec![
             ("vJrwpWtwJgWr", "hcsFMMfFFhFp", 'p'),
             ("jqHRNqRjqzjGDLGL", "rsFMfFZSrLrFZsSL", 'L'),
-            ("PmmdzqPrV", "vPwwTWBwg", 'P')
+            ("PmmdzqPrV", "vPwwTWBwg", 'P'),
         ];
 
         let mut iter = sacks.iter();
@@ -125,14 +156,50 @@ CrZsJsPPZsGzwwsLwLmpwMDw";
     /// The first rucksack contains the items `vJrwpWtwJgWrhcsFMMfFFhFp`, which means its first compartment contains the items `vJrwpWtwJgWr`, while the second compartment contains the items `hcsFMMfFFhFp`.
     /// The only item type that appears in both compartments is lowercase `p`.
     #[test]
-    fn first_rucksack<'a>() {
+    fn first_rucksack() {
         let contents = "vJrwpWtwJgWrhcsFMMfFFhFp";
         let sack = Rucksack::new(contents);
 
-        println!("{:?} :: {:?}", sack.compartment1, sack.compartment2);
         assert_eq!(sack.compartment1, "vJrwpWtwJgWr");
         assert_eq!(sack.compartment2, "hcsFMMfFFhFp");
 
-        // assert_eq!(shared_item(sack.compartment1.to_string(), sack.compartment2.to_string()), 'p');
+        assert_eq!(shared_item(&sack.compartment1, &sack.compartment2), 'p');
+    }
+
+    const EXAMPLE_2: &str = r"vJrwpWtwJgWrhcsFMMfFFhFp
+jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL
+PmmdzqPrVvPwwTWBwg
+wMqvLMZHhHMvwLHjbvcjnnSBnvTQFn
+ttgJtRGJQctTZtZT
+CrZsJsPPZsGzwwsLwLmpwMDw";
+
+    ///
+    /// Every set of three lines in your list corresponds to a single group, but each group can have a different badge item type. So, in the above example, the first group's rucksacks are the first three lines:
+    ///
+    /// ```
+    /// vJrwpWtwJgWrhcsFMMfFFhFp
+    /// jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL
+    /// PmmdzqPrVvPwwTWBwg
+    /// ```
+    /// And the second group's rucksacks are the next three lines:
+    /// ```
+    /// wMqvLMZHhHMvwLHjbvcjnnSBnvTQFn
+    /// ttgJtRGJQctTZtZT
+    /// CrZsJsPPZsGzwwsLwLmpwMDw
+    /// ```
+    /// In the first group, the only item type that appears in all three rucksacks is lowercase `r`; this must be their badges. In the second group, their badge item type must be `Z`.
+    ///
+    /// Priorities for these items must still be found to organize the sticker attachment efforts: here, they are `18 (r)` for the first group and `52 (Z)` for the second group. The sum of these is `70`.
+    #[test]
+    fn part2_examples() {
+        let lines = gen_two(EXAMPLE_2);
+
+        let group1 = lines[..3].to_vec();
+        assert_eq!('r', common_item(group1));
+
+        let group2 = lines[3..].to_vec();
+        assert_eq!('Z', common_item(group2));
+
+        assert_eq!(Some(70),solve_part2(&lines))
     }
 }
