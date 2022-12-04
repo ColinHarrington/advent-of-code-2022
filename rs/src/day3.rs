@@ -1,6 +1,4 @@
-use clap::builder::Str;
 use yaah::*;
-use itertools::Itertools;
 
 #[aoc_generator(day3, part1)]
 fn gen(input: &'static str) -> Vec<Rucksack> {
@@ -84,10 +82,8 @@ pub fn shared_item(s1: &String, s2: &String) -> char {
 
 #[cfg(test)]
 mod test {
-    // use super::gen;
     use std::iter::zip;
     use crate::day3::{common_item, gen, gen_two, item_type_value, Rucksack, shared_item, solve_part1, solve_part2};
-    // use super::gen;
 
     const EXAMPLE: &str = r"vJrwpWtwJgWrhcsFMMfFFhFp
 jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL
