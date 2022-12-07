@@ -1,5 +1,4 @@
-use std::ops::{Range, RangeInclusive};
-use itertools::Itertools;
+use std::ops::RangeInclusive;
 use yaah::*;
 
 #[aoc_generator(day4)]
@@ -54,7 +53,7 @@ fn range_from_string(s: String) -> RangeInclusive<u32> {
 
 #[cfg(test)]
 mod test {
-    use crate::day4::{assignment_pair, fully_contains, gen, range_from_string, solve_part1, solve_part2};
+    use crate::day4::{fully_contains, gen, range_from_string, solve_part1, solve_part2};
 
     const EXAMPLE: &str = "2-4,6-8
 2-3,4-5
