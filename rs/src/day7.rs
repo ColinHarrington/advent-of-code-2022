@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::collections::HashMap;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete;
@@ -8,16 +9,79 @@ use nom::multi::separated_list1;
 use nom::sequence::{preceded, tuple};
 use yaah::*;
 
-// #[aoc_generator(day7)]
-// fn gen(input: &'static str) -> Vec<Command<'static>> {
-//     let (tail, commands) = parse_terminal(input).unwrap();
-//     commands
-// }
+type FileSystem = HashMap<String, u32>;
+
 #[aoc(day7, part1)]
 fn solve_part1(input: &'static str) -> u32 {
-    let (tail, commands) = parse_terminal(input).unwrap();
-    dbg!(&commands);
-    0
+    let (_, commands) = parse_terminal(input).unwrap();
+
+    let fs: FileSystem = build_fs(commands);
+    let predicate = |size: &u32| *size <= 100000;
+    let undersize: Vec<u32> = filter_dir_size(fs, &predicate);
+
+    undersize.into_iter().sum()
+}
+
+#[aoc(day7, part2)]
+fn solve_part2(input: &'static str) -> u32 {
+    let (_, commands) = parse_terminal(input).unwrap();
+    let fs: FileSystem = build_fs(commands);
+
+    let total_disk_space: u32 = 70000000;
+    let required_free_space: u32 = 30000000;
+    let total_used: u32 = fs.keys().filter_map(|k| fs.get(k)).sum();
+    let unused_space = total_disk_space - total_used;
+    let min_deleted = required_free_space - unused_space;
+
+    let predicate = |size: &u32| *size >= min_deleted;
+    let undersize: Vec<u32> = filter_dir_size(fs, &predicate);
+
+    undersize.into_iter().min().unwrap()
+}
+
+fn build_fs(commands: Vec<Command>) -> FileSystem {
+    let mut file_system: FileSystem = FileSystem::new();
+    let mut cwd = vec!["/".to_string()];
+    for command in commands {
+        match command {
+            Command::ChangeDirectory { target } => {
+                match String::from(target).as_str() {
+                    "/" => cwd.clear(),
+                    ".." => { cwd.pop(); }
+                    name => cwd.push(name.to_string())
+                }
+            }
+            Command::List { entries } => {
+                let path = build_path(&cwd);
+                let size: u32 = entries.into_iter()
+                    .filter_map(|e| match e {
+                        ListEntry::Dir { name: _ } => Some(0),
+                        ListEntry::File { size, name: _ } => Some(size)
+                    })
+                    .sum();
+                file_system.insert(path, size);
+            }
+        }
+    }
+
+    file_system
+}
+
+fn filter_dir_size(fs: FileSystem, size_predicate: &dyn Fn(&u32) -> bool) -> Vec<u32> {
+    fs.keys().filter_map(|key|
+        fs.keys()
+            .filter(|k2| k2.starts_with(key))
+            .map(|k| fs.get(k)).sum()
+    )
+        .filter(size_predicate)
+        .collect()
+}
+
+fn build_path(parts: &Vec<String>) -> String {
+    match parts.len() {
+        0 => "/".to_string(),
+        _ => format!("/{}/", parts.join("/"))
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -51,8 +115,7 @@ fn cd_command(input: &str) -> IResult<&str, Command> {
 }
 
 fn ls_command(input: &str) -> IResult<&str, Command> {
-    // let (input, _) = tag("$ ")(input)?;
-    let (input, name) = tag("ls")(input)?;
+    let (input, _) = tag("ls")(input)?;
     let (input, _) = newline(input)?;
     let (input, entries) = separated_list1(line_ending, alt((dir_entry, file_entry)))(input)?;
 
@@ -77,7 +140,7 @@ fn file_entry(input: &str) -> IResult<&str, ListEntry> {
 #[cfg(test)]
 mod test {
     use std::borrow::Cow;
-    use crate::day7::{Command, command, ListEntry, parse_terminal, solve_part1};
+    use crate::day7::{Command, command, ListEntry, parse_terminal, solve_part1, solve_part2};
     use crate::day7::Command::ChangeDirectory;
 
     const EXAMPLE: &str = r"$ cd /
@@ -107,7 +170,7 @@ $ ls
     #[test]
     fn example() {
         let (tail, commands) = parse_terminal(EXAMPLE).unwrap();
-        dbg!(tail, &commands);
+        assert!(tail.is_empty());
         assert_eq!(10, commands.len());
     }
 
@@ -144,10 +207,17 @@ dir e
         assert_eq!(cmd, Command::List { entries });
     }
 
+    /// To begin, find all of the directories with a total size of at most `100000`,
+    /// then calculate the sum of their total sizes. In the example above,
+    /// these directories are `a` and `e`; the sum of their total sizes is `95437` (94853 + 584).
+    /// (As in this example, this process can count files more than once!)
     #[test]
     fn part1() {
-        let a = solve_part1(&EXAMPLE);
-        assert_eq!(99, a)
+        assert_eq!(95437, solve_part1(&EXAMPLE))
     }
 
+    #[test]
+    fn part2() {
+        assert_eq!(24933642, solve_part2(&EXAMPLE))
+    }
 }
