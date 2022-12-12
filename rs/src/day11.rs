@@ -14,12 +14,25 @@ fn gen(input: &'static str) -> Vec<Monkey> {
 
 #[aoc(day11, part1)]
 fn solve_part1(monkeys: &Vec<Monkey>) -> u64 {
+    monkey_business(monkeys, 20, true)
+}
+
+#[aoc(day11, part2)]
+fn solve_part2(monkeys: &Vec<Monkey>) -> u64 {
+    monkey_business(monkeys, 10000, false)
+}
+
+fn monkey_business(monkeys: &Vec<Monkey>, rounds: usize, div3:bool) -> u64 {
     let mut items: Vec<Vec<u64>> = monkeys.iter()
         .map(|monkey| monkey.starting_items.clone())
         .collect();
 
+    let common_product: u64 = monkeys.into_iter()
+        .map(|monkey| monkey.test.divisible_by)
+        .product::<u64>();
+
     let mut inspections: Vec<u64> = monkeys.iter().map(|_| 0).collect();
-    for _ in 0..20 {
+    for _ in 0..rounds {
         for monkey in monkeys {
             for item in items[monkey.number].clone() {
                 inspections[monkey.number] += 1;
@@ -28,8 +41,12 @@ fn solve_part1(monkeys: &Vec<Monkey>) -> u64 {
                     Operand::Value(value) => value
                 };
                 let worry_level: u64 = match monkey.operation.operator {
-                    Operator::Plus => (item + other_value) / 3,
-                    Operator::Times => (item * other_value) / 3
+                    Operator::Plus => item + other_value,
+                    Operator::Times => item * other_value
+                };
+                let worry_level = match div3 {
+                    true => worry_level / 3,
+                    false => worry_level % common_product
                 };
                 let thrown_to = match worry_level % monkey.test.divisible_by == 0 {
                     true => monkey.test.if_true as usize,
@@ -140,7 +157,7 @@ pub struct Monkey {
 
 #[cfg(test)]
 mod test {
-    use crate::day11::{starting_items, test_expression, TestExpression, Operation, Operator, Operand, operation, Monkey, monkey, monkeys, gen, solve_part1};
+    use crate::day11::{starting_items, test_expression, TestExpression, Operation, Operator, Operand, operation, Monkey, monkey, monkeys, gen, solve_part1, solve_part2};
 
     const EXAMPLE: &str = r"Monkey 0:
   Starting items: 79, 98
@@ -264,5 +281,10 @@ Monkey 3:
     #[test]
     fn part1() {
         assert_eq!(10605, solve_part1(&gen(EXAMPLE)));
+    }
+
+    #[test]
+    fn part2() {
+        assert_eq!(2713310158, solve_part2(&gen(EXAMPLE)));
     }
 }
