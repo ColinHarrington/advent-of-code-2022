@@ -137,7 +137,7 @@ addx -5";
 
     #[test]
     fn instructions() {
-        let (tail, instructions) = parse_instructions(SMALL_EXAMPLE).unwrap();
+        let (_, instructions) = parse_instructions(SMALL_EXAMPLE).unwrap();
 
         let expected_instructions = vec![
             Instruction::NOOP,
