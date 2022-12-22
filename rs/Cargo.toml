@@ -16,6 +16,8 @@ criterion = "0.4"
 itertools = "0.10.5"
 regex = "1.7.0"
 nom = "7.1.1"
+pathfinding = "4.1.1"
+petgraph = "0.6.2"
 
 [[bench]]
 name = "aoc-bench"
