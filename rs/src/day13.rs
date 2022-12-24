@@ -4,15 +4,20 @@ use itertools::Itertools;
 use nom::branch::alt;
 use nom::character::complete::{char as nom_char, line_ending, u32 as nom_u32};
 use nom::IResult;
-use nom::multi::{separated_list0, separated_list1};
+use nom::multi::{many1, separated_list0, separated_list1};
 use nom::sequence::{preceded, separated_pair, terminated, tuple};
 use yaah::*;
 
 type PacketPair = (PacketData, PacketData);
 
-#[aoc_generator(day13)]
-fn gen(input: &'static str) -> Vec<PacketPair> {
+#[aoc_generator(day13, part1)]
+fn generate_packet_pairs(input: &'static str) -> Vec<PacketPair> {
     packet_pairs(input).unwrap().1
+}
+
+#[aoc_generator(day13, part2)]
+fn generate_packet_list(input: &'static str) -> Vec<PacketData> {
+    separated_list1(many1(line_ending), packet)(input).unwrap().1
 }
 
 #[aoc(day13, part1)]
@@ -22,6 +27,27 @@ fn solve_part1(pairs: &Vec<PacketPair>) -> u32 {
         .filter(|(_, (packet1, packet2))| packet1.cmp(packet2) == Ordering::Less)
         .map(|(i, _)| i as u32)
         .sum()
+}
+
+#[aoc(day13, part2)]
+fn solve_part2(input: &Vec<PacketData>) -> u32 {
+    let dividers = vec![
+        packet("[[2]]").unwrap().1,
+        packet("[[6]]").unwrap().1,
+    ];
+
+    let mut packets: Vec<PacketData> = input.iter()
+        .cloned()
+        .chain(dividers.iter().cloned())
+        .collect();
+
+    packets.sort_by(|a, b| a.cmp(b));
+
+    packets.iter().enumerate()
+        .map(|(idx, packet)| (1 + idx, packet))
+        .filter(|(_, packet)| dividers.contains(packet))
+        .map(|(n, _)| n as u32)
+        .product()
 }
 
 fn packet_pairs(input: &str) -> IResult<&str, Vec<(PacketData, PacketData)>> {
@@ -83,7 +109,7 @@ impl Ord for PacketData {
 mod test {
     use std::cmp::Ordering;
     use itertools::Itertools;
-    use crate::day13::{gen, packet_data_value, packet_pairs, PacketData, solve_part1};
+    use crate::day13::{generate_packet_list, generate_packet_pairs, packet_data_value, packet_pairs, PacketData, solve_part1, solve_part2};
 
     const EXAMPLE: &str = r"[1,1,3,1,1]
 [1,1,5,1,1]
@@ -141,26 +167,13 @@ mod test {
         }
     }
 
-    /// If both values are integers, the lower integer should come first.
-    /// If the left integer is lower than the right integer, the inputs are in the right order.
-    /// If the left integer is higher than the right integer, the inputs are not in the right order.
-    /// Otherwise, the inputs are the same integer; continue checking the next part of the input.
-    // #[test]
-    // fn compare_value_packets() {
-    //     let test_data = vec![
-    //         (3, 5, PacketOrder::Correct),
-    //         (3, 1, PacketOrder::Incorrect),
-    //         (1, 1, PacketOrder::Continue),
-    //     ];
-    //
-    //     for (left, right, expected) in test_data {
-    //         let value1 = PacketDataValue { value: left };
-    //         let value2 = PacketData::Value(PacketDataValue { value: right });
-    //         assert_eq!(expected, value1.compare(&value2));
-    //     }
-    // }
     #[test]
     fn part1() {
-        assert_eq!(13, solve_part1(&gen(EXAMPLE)));
+        assert_eq!(13, solve_part1(&generate_packet_pairs(EXAMPLE)));
+    }
+
+    #[test]
+    fn part2() {
+        assert_eq!(140, solve_part2(&generate_packet_list(EXAMPLE)));
     }
 }
