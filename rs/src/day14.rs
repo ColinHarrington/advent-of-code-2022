@@ -2,10 +2,9 @@ use std::{cmp, fmt};
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::ops::Range;
-use std::str::Chars;
-use itertools::{Itertools, Product};
+use itertools::Itertools;
 use nom::bytes::complete::tag;
-use nom::character::complete::{char as nom_char, line_ending, not_line_ending, u32 as nom_u32};
+use nom::character::complete::{char as nom_char, line_ending, u32 as nom_u32};
 use nom::IResult;
 use nom::multi::separated_list1;
 use nom::sequence::separated_pair;
@@ -19,14 +18,28 @@ fn generate_structures(input: &'static str) -> Vec<RockStructure> {
 
 #[aoc(day14, part1)]
 fn solve_part1(structures: &Vec<RockStructure>) -> u32 {
-    let mut cave = Cave::from_structures(structures);
+    let mut cave = Cave::from_structures(structures, false);
 
     while let Some(grain) = cave.drop_grain() {
         cave.add_grain(grain);
     }
 
-    let r = cave.map.into_iter().filter(|(k, v)| *v == 'o').count();
-    r as u32
+    cave.map.into_iter()
+        .filter(|(_, v)| *v == 'o').count() as u32
+}
+
+#[aoc(day14, part2)]
+fn solve_part2(structures: &Vec<RockStructure>) -> u32 {
+    let mut cave = Cave::from_structures(structures, true);
+
+    while cave.is_open(500, 0) {
+        let grain = cave.drop_grain_with_floor().unwrap();
+        cave.add_grain(grain);
+    }
+    println!("{cave}");
+
+    cave.map.into_iter()
+        .filter(|(_, v)| *v == 'o').count() as u32
 }
 
 
@@ -42,11 +55,11 @@ fn map_rocks(structure: &RockStructure) -> Vec<Position> {
 fn map_rock_line(from: &Position, to: &Position) -> Vec<Position> {
     let xmin = cmp::min(from.0, to.0);
     let xmax = cmp::max(from.0, to.0) + 1;
-    let xrange = (xmin..xmax);
+    let xrange = xmin..xmax;
 
     let ymin = cmp::min(from.1, to.1);
     let ymax = cmp::max(from.1, to.1) + 1;
-    let yrange = (ymin..ymax);
+    let yrange = ymin..ymax;
 
     xrange.cartesian_product(yrange)
         .map(|(x, y)| Position(x, y))
@@ -56,12 +69,11 @@ fn map_rock_line(from: &Position, to: &Position) -> Vec<Position> {
 #[derive(Debug, Eq, PartialEq)]
 pub struct Cave {
     map: HashMap<Position, char>,
-    xrange: Range<u32>,
-    yrange: Range<u32>,
+    floor: Option<u32>,
 }
 
 impl Cave {
-    fn from_structures(structures: &Vec<RockStructure>) -> Self {
+    fn from_structures(structures: &Vec<RockStructure>, has_floor: bool) -> Self {
         let rocks = structures.iter()
             .map(|structure| map_rocks(structure))
             .flatten()
@@ -74,18 +86,24 @@ impl Cave {
             map.insert(rock, '#');
         }
 
-        let xmin = map.keys().map(|p| p.0).min().unwrap();
-        let xmax = map.keys().map(|p| p.0).max().unwrap();
-        let xrange = (xmin..(xmax + 1));
-        // let ymin = map.keys().map(|p| p.1).min().unwrap();
         let ymax = map.keys().map(|p| p.1).max().unwrap();
-        let yrange = (0..(ymax + 1));
 
-        Self { map, xrange, yrange }
+        let floor = match has_floor {
+            true => Some(ymax + 2),
+            false => None
+        };
+        Self { map, floor }
     }
 
-    fn in_range(&self, x: u32, y: u32) -> bool {
-        self.xrange.contains(&x) && self.yrange.contains(&y)
+    fn xrange(&self) -> Range<u32> {
+        let xmin = self.map.keys().map(|p| p.0).min().unwrap();
+        let xmax = self.map.keys().map(|p| p.0).max().unwrap();
+        xmin..(xmax + 1)
+    }
+
+    fn yrange(&self) -> Range<u32> {
+        let ymax = self.map.keys().map(|p| p.1).max().unwrap();
+        0..(ymax + 1)
     }
 
     /// Drops a grain and returns it's final destiny.
@@ -93,7 +111,7 @@ impl Cave {
     /// or None if it's gone to the abyss
     fn drop_grain(&mut self) -> Option<Position> {
         let mut x = 500;
-        self.yrange.clone().find_map(|y| match self.move_down(x, y) {
+        self.yrange().find_map(|y| match self.move_down(x, y) {
             Some(p) => {
                 x = p.0;
                 None
@@ -101,6 +119,20 @@ impl Cave {
             None => Some(Position(x, y))
         })
     }
+
+    /// Drops a grain, but if the floor is reached, it will return it's resting place.
+    fn drop_grain_with_floor(&mut self) -> Option<Position> {
+        let mut x = 500;
+        let floor = self.floor.unwrap() - 1;
+        (0..(floor + 1)).find_map(|y| match self.move_down(x, y) {
+            Some(p) if y != floor => {
+                x = p.0;
+                None
+            }
+            _ => Some(Position(x, y))
+        })
+    }
+
     fn add_grain(&mut self, grain: Position) {
         self.map.insert(grain, 'o');
     }
@@ -124,14 +156,14 @@ impl fmt::Display for Cave {
         let xmin = self.map.keys().map(|p| p.0).min().unwrap();
         let xmax = self.map.keys().map(|p| p.0).max().unwrap();
 
+
         let labels: Vec<String> = vec![
             format!("{xmin}"),
             "500".to_string(),
             format!("{xmax}"),
         ];
         let label_lines: Vec<String> = (0..(labels.iter().map(|label| label.len()).max().unwrap()))
-            // .inspect(|i|println!("inspect {i}"))
-            .map(|lr| self.xrange.clone()
+            .map(|lr| self.xrange()
                 .map(|x| match x {
                     _ if x == xmin => labels[0].chars().nth(lr).unwrap(),
                     _ if x == 500 => labels[1].chars().nth(lr).unwrap(),
@@ -142,8 +174,8 @@ impl fmt::Display for Cave {
             .collect::<Vec<String>>();
 
 
-        let lines: Vec<String> = self.yrange.clone()
-            .map(|y| format!("{y} {}", self.xrange.clone()
+        let lines: Vec<String> = self.yrange()
+            .map(|y| format!("{y} {}", self.xrange()
                 .map(|x| self.map.get(&Position(x, y))
                     .unwrap_or(&'.'))
                 .collect::<String>())
@@ -172,7 +204,7 @@ fn rock_structure(input: &str) -> IResult<&str, RockStructure> {
 
 #[cfg(test)]
 mod test {
-    use crate::day14::{Cave, generate_structures, Position, RockStructure, solve_part1};
+    use crate::day14::{Cave, generate_structures, Position, RockStructure, solve_part1, solve_part2};
 
     const EXAMPLE: &str = r"498,4 -> 498,6 -> 496,6
 503,4 -> 502,4 -> 502,9 -> 494,9";
@@ -199,7 +231,7 @@ mod test {
     #[test]
     fn cave_display() {
         let structures = generate_structures(EXAMPLE);
-        let cave = Cave::from_structures(&structures);
+        let cave = Cave::from_structures(&structures, false);
 
         let expected: String = r"
   4     5  5
@@ -222,5 +254,10 @@ mod test {
     #[test]
     fn part1() {
         assert_eq!(24, solve_part1(&generate_structures(EXAMPLE)));
+    }
+
+    #[test]
+    fn part2() {
+        assert_eq!(93, solve_part2(&generate_structures(EXAMPLE)));
     }
 }
