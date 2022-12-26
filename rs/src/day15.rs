@@ -133,8 +133,7 @@ fn location(input: &str) -> IResult<&str, Location> {
 
 #[cfg(test)]
 mod test {
-    use std::ops::RangeInclusive;
-    use crate::day15::{find_distress_signal, fold_ranges, gen_sensors, Location, location, merge_range, row_coverage, Sensor, sensor, solve_part1, solve_part2};
+    use crate::day15::{find_distress_signal, fold_ranges, gen_sensors, Location, location, merge_range, row_coverage, Sensor, sensor};
 
     const EXAMPLE: &str = r"Sensor at x=2, y=18: closest beacon is at x=-2, y=15
 Sensor at x=9, y=16: closest beacon is at x=10, y=16
