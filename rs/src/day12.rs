@@ -3,39 +3,10 @@ use std::fmt;
 use itertools::Itertools;
 
 use pathfinding::matrix::Matrix;
-use pathfinding::prelude::{astar, dfs, dijkstra};
-// use petgraph::algo::{astar, dijkstra};
-// use petgraph::Directed;
-// use petgraph::dot::{Config, Dot};
-// use petgraph::graphmap::DiGraphMap;
-// use petgraph::prelude::GraphMap;
+use petgraph::algo::{astar, dijkstra};
+use petgraph::dot::{Config, Dot};
+use petgraph::prelude::DiGraphMap;
 use yaah::*;
-
-/*
-  Parse the grid
-  * Find the starting point
-  * Find the ending point
-  * Constuct a chain.
-  * identify nodes that only have one forward path
-
-  If a node has no options, it's stranded
-  If a node has only one option, then it's fixed.
-  If a node has
-
-  Map paths
-  Point => vec[Point]
-  */
-
-// #[aoc_generator(day12)]
-// fn gen(input: &'static str) -> Heightmap {
-//     input.lines()
-//         .enumerate()
-//         .map(|(y, line)| line.chars().enumerate()
-//             .map(|(x, height)| Elevation(x, y, height))
-//             .collect()
-//         )
-//         .collect()
-// }
 
 #[aoc_generator(day12)]
 fn gen(input: &'static str) -> Matrix<Elevation> {
@@ -53,14 +24,33 @@ fn gen(input: &'static str) -> Matrix<Elevation> {
 
 #[aoc(day12, part1)]
 fn solve_part1(map: &Matrix<Elevation>) -> u32 {
-    let start = map.items()
-        .map(|(_, &elevation)| elevation)
-        .find(|&elevation| elevation.height == 'S').unwrap();
-    let end = map.items()
-        .map(|(_, &elevation)| elevation)
-        .find(|&elevation| elevation.height == 'E').unwrap();
+    let mut graph: DiGraphMap<Elevation, u32> = DiGraphMap::new();
+    let edges = map.items()
+        .map(|((r,c),&elevation)| successors(map, elevation.clone()).iter()
+            .map(|&other| (elevation, other, 1u32))
+            .collect::<Vec<(Elevation, Elevation, u32)>>())
+        .flatten()
+        .collect::<Vec<(Elevation, Elevation, u32)>>();
+    for (left, right, weight) in edges {
+        if !graph.contains_edge(left, right) {
+            graph.add_edge(left, right, weight);
+        } else {
+            println!("Duplicate Edge: {:?}, {:?}", left, right);
+        }
 
-    0
+    }
+
+    let start = graph.nodes().find(|n|n.height == 'S').unwrap();
+    let end = graph.nodes().find(|n|n.height == 'E').unwrap();
+    let (steps, path) = astar(&graph, start,
+                              |e|e.height == 'E', |(l, r, &w)|w,
+                              |e2:Elevation| ('z' as u32 + 1) - (e2.height as u32)).unwrap();
+
+    // for e in path {
+    //     println!("{e}");
+    // }
+    steps as u32
+
 }
 
 fn successors(map: &Matrix<Elevation>, elevation: Elevation) -> Vec<Elevation> {
@@ -72,7 +62,7 @@ fn successors(map: &Matrix<Elevation>, elevation: Elevation) -> Vec<Elevation> {
     // let display = horses.iter().map(|elevation)|format!("{elevation}")).join(", ");
     // println!("{elevation} => {display}");
     // dbg!(&elevation, &horses);
-    match horses.iter().find(|&e|e.height == 'E') {
+    match horses.iter().find(|&e| e.height == 'E') {
         Some(&end) => vec![end],
         None => horses
     }
@@ -217,35 +207,34 @@ fn successors(map: &Matrix<Elevation>, elevation: Elevation) -> Vec<Elevation> {
 //     }
 // }
 
-// S => only 'a'
-// Same
-// z => 'E'
-fn char_cmp(h1: char, h2: char) -> bool {
-    println!("{:?} <=> {:?}", h1, h2);
-    match h1 {
-        'S' => h2 == 'a',
-        'z' => h2 == 'z' || h2 == 'E',
-        _ => match (h2 as i32) - (h1 as i32) {
-            0 | 1 => true,
-            _ => false
-        }
-    }
-}
+// // S => only 'a'
+// // Same
+// // z => 'E'
+// fn char_cmp(h1: char, h2: char) -> bool {
+//     println!("{:?} <=> {:?}", h1, h2);
+//     match h1 {
+//         'S' => h2 == 'a',
+//         'z' => h2 == 'z' || h2 == 'E',
+//         _ => match (h2 as i32) - (h1 as i32) {
+//             0 | 1 => true,
+//             _ => false
+//         }
+//     }
+// }
 
 /// To avoid needing to get out your climbing gear,
 /// the elevation of the destination square can be at most one higher than the elevation of your current square;
 /// that is, if your current elevation is m, you could step to elevation n, but not to elevation o.
 /// (This also means that the elevation of the destination square can be much lower than the elevation of your current square.)
 fn is_passable(e1: &Elevation, e2: &Elevation) -> bool {
-    match (e1.height, e2.height) {
-        ('E', _) => false,
-        ('S', 'a') => true,
-        ('S', _) => false,
-        (_, 'S') => false,
-        (c, 'E') => c == 'z',
-        (a,b) if a == b => true,
-        (a,b) if a > b => false,
-        (a,b) => (b as usize) - (a as usize) == 1,
+    e2.height_value() <= e1.height_value() + 1
+}
+
+fn height_value(height: char) -> u32 {
+    match height {
+        'E' => 'z' as u32,
+        'S' => 'a' as u32,
+        c => c as u32
     }
 }
 
@@ -266,67 +255,18 @@ impl fmt::Display for Elevation {
         // stream: `f`. Returns `fmt::Result` which indicates whether the
         // operation succeeded or failed. Note that `write!` uses syntax which
         // is very similar to `println!`.
-        write!(f, "{}({},{})", self.height, self.column, self.row)
+        write!(f, "{}({},{})", self.height, self.row+1, self.column+1)
     }
 }
-
-
-// fn build_paths(map: &Heightmap) -> HashMap<Point, Vec<Point>> {
-//     map.into_iter()
-//         .map(|row| row.into_iter()
-//             .map(|e| ((e.0, e.1), paths_forward(e, map)))
-//             .collect::<Vec<(Point, Vec<Point>)>>()
-//         )
-//         .flatten()
-//         .collect::<HashMap<Point, Vec<Point>>>()
-// }
-//
-// fn paths_forward(elevation: &Elevation, map: &Heightmap) -> Vec<Point> {
-//     let Elevation(x, y, _) = *elevation;
-//     let xrange = 0..(map[0].len());
-//     let yrange = 0..(map.len());
-//     // Up, Down, Left, Right
-//     let neighbors: Vec<(i32, i32)> = vec![
-//         (-1, 0),
-//         (1, 0),
-//         (0, 1),
-//         (0, -1),
-//     ];
-//     neighbors.iter()
-//         .map(|(horizontal, vertical)| (horizontal + x as i32, vertical + y as i32))
-//         .filter_map(|(x, y)| match yrange.contains(&(y as usize)) && xrange.contains(&(x as usize)) {
-//             true => Some((x as usize, y as usize)),
-//             false => None
-//         })
-//         .map(|(x1, y1)| map[y1][x1].clone())
-//         .filter(|other| is_passable(elevation,other))
-//         .map(|e| (e.0, e.1))
-//         .collect::<Vec<Point>>()
-// }
-//
-// fn locate_start(map: &Heightmap) -> Point {
-//     map.into_iter()
-//         .enumerate()
-//         .find_map(|(y, line)| line.into_iter()
-//             .enumerate()
-//             .find_map(|(x, elevation)| match elevation.height {
-//                 'S' => Some((x, y)),
-//                 _ => None
-//             })
-//         ).unwrap()
-// }
-//
-// fn locate_end(map: &Heightmap) -> Point {
-//     map.into_iter()
-//         .enumerate()
-//         .find_map(|(y, line)| line.into_iter()
-//             .enumerate()
-//             .find_map(|(x, elevation)| match elevation.height {
-//                 'E' => Some((x, y)),
-//                 _ => None
-//             })
-//         ).unwrap()
-// }
+impl Elevation {
+    fn height_value(&self) -> u32 {
+        match self.height {
+            'E' => 'z' as u32,
+            'S' => 'a' as u32,
+            c => c as u32
+        }
+    }
+}
 
 #[cfg(test)]
 mod test {
@@ -348,15 +288,15 @@ abdefghi";
         assert_eq!(31, solve_part1(&gen(EXAMPLE)));
     }
 
-    #[test]
-    fn test_compare() {
-        assert_eq!(true, char_cmp('S', 'a'));
-        assert_eq!(true, char_cmp('a', 'a'));
-        assert_eq!(true, char_cmp('a', 'b'));
-        assert_eq!(false, char_cmp('a', 'c'));
-
-        assert_eq!(true, char_cmp('z', 'z'));
-        assert_eq!(true, char_cmp('z', 'E'));
-    }
+    // #[test]
+    // fn test_compare() {
+    //     assert_eq!(true, char_cmp('S', 'a'));
+    //     assert_eq!(true, char_cmp('a', 'a'));
+    //     assert_eq!(true, char_cmp('a', 'b'));
+    //     assert_eq!(false, char_cmp('a', 'c'));
+    //
+    //     assert_eq!(true, char_cmp('z', 'z'));
+    //     assert_eq!(true, char_cmp('z', 'E'));
+    // }
 }
 
