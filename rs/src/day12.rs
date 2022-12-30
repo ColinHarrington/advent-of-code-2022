@@ -1,6 +1,4 @@
 use std::fmt;
-
-
 use pathfinding::matrix::Matrix;
 use petgraph::algo::astar;
 use petgraph::prelude::DiGraphMap;
@@ -22,52 +20,37 @@ fn gen(input: &'static str) -> Matrix<Elevation> {
 
 #[aoc(day12, part1)]
 fn solve_part1(map: &Matrix<Elevation>) -> u32 {
-    let mut graph: DiGraphMap<Elevation, u32> = DiGraphMap::new();
-    let edges = map.items()
-        .map(|(_, &elevation)| successors(map, elevation.clone()).iter()
-            .map(|&other| (elevation, other, 1u32))
-            .collect::<Vec<(Elevation, Elevation, u32)>>())
-        .flatten()
-        .collect::<Vec<(Elevation, Elevation, u32)>>();
-    for (left, right, weight) in edges {
-        if !graph.contains_edge(left, right) {
-            graph.add_edge(left, right, weight);
-        } else {
-            println!("Duplicate Edge: {:?}, {:?}", left, right);
-        }
-    }
-
-    let start = graph.nodes().find(|n| n.height == 'S').unwrap();
-    // let end = graph.nodes().find(|n| n.height == 'E').unwrap();
-    let (steps, _) = astar(&graph, start,
-                              |e| e.height == 'E', |(_, _, &w)| w,
-                              |e2: Elevation| ('z' as u32 + 1) - (e2.height as u32)).unwrap();
-
-    steps as u32
+    hike(map, 'S', 'E')
 }
 
 #[aoc(day12, part2)]
 fn solve_part2(map: &Matrix<Elevation>) -> u32 {
+    hike(map, 'E', 'a')
+}
+
+fn hike(map: &Matrix<Elevation>, from: char, to: char) -> u32 {
     let mut graph: DiGraphMap<Elevation, u32> = DiGraphMap::new();
+
     let edges = map.items()
         .map(|(_, &elevation)| successors(map, elevation.clone()).iter()
             .map(|&other| (elevation, other, 1u32))
             .collect::<Vec<(Elevation, Elevation, u32)>>())
         .flatten()
         .collect::<Vec<(Elevation, Elevation, u32)>>();
+
     for (left, right, weight) in edges {
-        if !graph.contains_edge(right, left) {
-            graph.add_edge(right, left, weight);
-        } else {
-            println!("Duplicate Edge: {:?}, {:?}", left, right);
-        }
+        match from {
+            'S' => graph.add_edge(left, right, weight),
+            _ => graph.add_edge(right, left, weight),
+        };
     }
 
-    let start = graph.nodes().find(|n| n.height == 'E').unwrap();
-    // let end = graph.nodes().find(|n| n.height == 'E').unwrap();
+    let start = graph.nodes().find(|n| n.height == from).unwrap();
+
     let (steps, _) = astar(&graph, start,
-                           |e| e.height == 'a', |(_, _, &w)| w,
-                           |e2: Elevation| ('z' as u32 + 1) - (e2.height as u32)).unwrap();
+                           |e| e.height == to,
+                           |_| 1,
+                           |_| 0).unwrap();
 
     steps as u32
 }
@@ -99,12 +82,7 @@ pub struct Elevation {
 }
 
 impl fmt::Display for Elevation {
-    // This trait requires `fmt` with this exact signature.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // Write strictly the first element into the supplied output
-        // stream: `f`. Returns `fmt::Result` which indicates whether the
-        // operation succeeded or failed. Note that `write!` uses syntax which
-        // is very similar to `println!`.
         write!(f, "{}({},{})", self.height, self.row + 1, self.column + 1)
     }
 }
@@ -132,16 +110,17 @@ abdefghi";
     #[test]
     fn test_input() {
         let map = gen(EXAMPLE);
+        assert_eq!(8 * 5, map.len())
     }
 
     #[test]
     fn part1() {
         assert_eq!(31, solve_part1(&gen(EXAMPLE)));
     }
+
     #[test]
     fn part2() {
         assert_eq!(29, solve_part2(&gen(EXAMPLE)));
     }
-
 }
 
