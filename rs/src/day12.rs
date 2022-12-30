@@ -1,10 +1,8 @@
-use std::collections::HashMap;
 use std::fmt;
-use itertools::Itertools;
+
 
 use pathfinding::matrix::Matrix;
-use petgraph::algo::{astar, dijkstra};
-use petgraph::dot::{Config, Dot};
+use petgraph::algo::astar;
 use petgraph::prelude::DiGraphMap;
 use yaah::*;
 
@@ -26,7 +24,7 @@ fn gen(input: &'static str) -> Matrix<Elevation> {
 fn solve_part1(map: &Matrix<Elevation>) -> u32 {
     let mut graph: DiGraphMap<Elevation, u32> = DiGraphMap::new();
     let edges = map.items()
-        .map(|((r,c),&elevation)| successors(map, elevation.clone()).iter()
+        .map(|(_, &elevation)| successors(map, elevation.clone()).iter()
             .map(|&other| (elevation, other, 1u32))
             .collect::<Vec<(Elevation, Elevation, u32)>>())
         .flatten()
@@ -37,20 +35,41 @@ fn solve_part1(map: &Matrix<Elevation>) -> u32 {
         } else {
             println!("Duplicate Edge: {:?}, {:?}", left, right);
         }
-
     }
 
-    let start = graph.nodes().find(|n|n.height == 'S').unwrap();
-    let end = graph.nodes().find(|n|n.height == 'E').unwrap();
-    let (steps, path) = astar(&graph, start,
-                              |e|e.height == 'E', |(l, r, &w)|w,
-                              |e2:Elevation| ('z' as u32 + 1) - (e2.height as u32)).unwrap();
+    let start = graph.nodes().find(|n| n.height == 'S').unwrap();
+    // let end = graph.nodes().find(|n| n.height == 'E').unwrap();
+    let (steps, _) = astar(&graph, start,
+                              |e| e.height == 'E', |(_, _, &w)| w,
+                              |e2: Elevation| ('z' as u32 + 1) - (e2.height as u32)).unwrap();
 
-    // for e in path {
-    //     println!("{e}");
-    // }
     steps as u32
+}
 
+#[aoc(day12, part2)]
+fn solve_part2(map: &Matrix<Elevation>) -> u32 {
+    let mut graph: DiGraphMap<Elevation, u32> = DiGraphMap::new();
+    let edges = map.items()
+        .map(|(_, &elevation)| successors(map, elevation.clone()).iter()
+            .map(|&other| (elevation, other, 1u32))
+            .collect::<Vec<(Elevation, Elevation, u32)>>())
+        .flatten()
+        .collect::<Vec<(Elevation, Elevation, u32)>>();
+    for (left, right, weight) in edges {
+        if !graph.contains_edge(right, left) {
+            graph.add_edge(right, left, weight);
+        } else {
+            println!("Duplicate Edge: {:?}, {:?}", left, right);
+        }
+    }
+
+    let start = graph.nodes().find(|n| n.height == 'E').unwrap();
+    // let end = graph.nodes().find(|n| n.height == 'E').unwrap();
+    let (steps, _) = astar(&graph, start,
+                           |e| e.height == 'a', |(_, _, &w)| w,
+                           |e2: Elevation| ('z' as u32 + 1) - (e2.height as u32)).unwrap();
+
+    steps as u32
 }
 
 fn successors(map: &Matrix<Elevation>, elevation: Elevation) -> Vec<Elevation> {
@@ -58,169 +77,11 @@ fn successors(map: &Matrix<Elevation>, elevation: Elevation) -> Vec<Elevation> {
         .map(|rc| *map.get(rc).unwrap())
         .filter(|neighbor| is_passable(&elevation, neighbor))
         .collect::<Vec<Elevation>>();
-
-    // let display = horses.iter().map(|elevation)|format!("{elevation}")).join(", ");
-    // println!("{elevation} => {display}");
-    // dbg!(&elevation, &horses);
     match horses.iter().find(|&e| e.height == 'E') {
         Some(&end) => vec![end],
         None => horses
     }
 }
-//
-// fn passable_distance(e1: Elevation, e2: Elevation) -> Option<usize> {
-//     match (e1.height, e2.height) {
-//         ('E', _) => None,
-//         ('S', 'a') => Some(1),
-//         ('S', _) => None,
-//         ('z', 'E') => Some(1),
-//         (a, b) => match (b as i32) - (a as i32) {
-//             0 => Some(0),
-//             1 => Some(1),
-//             _ => None
-//         }
-//     }
-// }
-
-// #[aoc(day12, part1)]
-// fn solve_part1(map: &Matrix<Elevation>) -> u32 {
-//     // let m:DiGraphMap<Elevation, u32> = DiGraphMap::from_elements(map.items());
-//     let edges: Vec<(Elevation, Elevation)> = map.items()
-//         .map(|((row, column), &elevation)| map
-//             .neighbours((row, column), false)
-//             .inspect(|n| println!("[{:?}] -> {:?}", elevation, n))
-//             .map(|rc| *map.get(rc).unwrap())
-//             .filter(|&neighbor|is_passable(&elevation, &neighbor))
-//             .map(|neighbor|(elevation, neighbor))
-//             .inspect(|&p| println!("Edge:{:?}", p))
-//             .collect::<Vec<(Elevation, Elevation)>>()
-//         )
-//         .flatten()
-//         .collect();
-//     // let x = map.items().map(|(r,c),c| c).collect();
-//     // dbg!(&edges);
-//     let mut graph: DiGraphMap<Elevation, ()> = DiGraphMap::from_edges(edges);
-//
-//
-//     // for (rc, &elevation) in map.items() {
-//     //     match graph.contains_node(elevation) {
-//     //         true => (),
-//     //         false => graph.add_node(elevation)
-//     //     };
-//     // }
-//
-//     dbg!(graph.nodes().len(), map.items().count());
-//     let start = map.items()
-//         .map(|(_, &elevation)| elevation)
-//         .find(|&elevation| elevation.height == 'S').unwrap();
-//     let end = map.items()
-//         .map(|(_, &elevation)| elevation)
-//         .find(|&elevation| elevation.height == 'E').unwrap();
-//     dbg!(graph.nodes().len(), map.items().count(), &start, &end);
-//     // let res = dijkstra(&graph, start, Some(end), |_| 1u32);
-//     let res = astar(&graph, start, |n| n.height == 'E', |(e1, e2, _)| 1,|e| 0u32);
-//     dbg!(&res);
-//
-//     // *res.get(&end).unwrap() as u32
-//     0
-// }
-
-//
-// #[aoc(day12, part1)]
-// fn solve_part1(map: &Heightmap) -> u32 {
-//     let mut graph:DiGraphMap<Elevation, ()> = DiGraphMap::new();
-//
-//     let paths = build_paths(map);
-//     for row in map {
-//         for &elevation in row {
-//             // let node_id = graph.add_node(elevation.clone());
-//             let Elevation(x, y, height) = elevation;
-//             paths.get(&(elevation.0, elevation.1)).unwrap().iter()
-//                 .for_each(|&point| {
-//                     let e2 = map[point.1][point.0];
-//                     graph.add_edge(elevation, e2, ());
-//                 })
-//         }
-//     }
-//
-//     println!("{:?}", Dot::with_config(&graph, &[Config::EdgeNoLabel]));
-//
-//     let start = *map.iter().flatten().find(|&e|e.2 == 'S').unwrap();
-//     let end = *map.iter().flatten().find(|&e|e.2 == 'E').unwrap();
-//     dbg!(&start, &end);
-//     // let end: Option<Elevation>= map.iter()
-//     //     .flatten()
-//     //     .find_map(|&e| match e.2 {
-//     //         'E' => Some(e),
-//     //         _ => None
-//     //     });
-//
-//     let res = dijkstra(&graph, start,Some(end), |_| 1);
-//     // let (steps, nodes) = dijkstra(&graph, *start,
-//     //                            end,
-//     //                            |_| 1);
-//     dbg!(&res, &res.len(), res.get(&end));
-//     *res.get(&end).unwrap() as u32
-// }
-
-
-// fn at_end(elevation: &Elevation) -> bool {
-//     return elevation.2 == 'E';
-// }
-
-// pub struct ElevationMap {
-//     map: Matrix<Elevation>,
-// }
-//
-// impl ElevationMap {
-//     pub fn successors(&self, point: &Point) -> Vec<(Point, usize)> {
-//         let elevation = self.map.get(*point).unwrap();
-//
-//         // let ok = self.map.neighbours(*point, false).for_each(|(r,c)| println!("{r},{c}"));
-//         // dbg!(&ok);
-//         let neighbors = self.map.neighbours(*point, false)
-//             // .inspect(|(r, c)| println!("{r},{c}"))
-//             .filter_map(|i| self.map.get(i))
-//             // .inspect(|el| println!("{:?} @ {:?}", el.height, el.point))
-//             .filter(|other| is_passable(elevation, other))
-//             .map(|e| (e.point, 1 as usize))
-//             // .inspect(|s| println!("{:?} successor {:?}", point, s))
-//             .collect::<Vec<(Point, usize)>>();
-//         println!("{:?} => {:?} => {:?}", point, elevation.height, neighbors);
-//         neighbors
-//     }
-//
-//
-//     pub fn start(&self) -> &Elevation {
-//         self.map.values().find(|e| e.height == 'S').unwrap()
-//     }
-//
-//     pub fn end(&self) -> &Elevation {
-//         self.map.values().find(|e| e.height == 'E').unwrap()
-//     }
-//
-//     pub fn is_end(&self, point: Point) -> bool {
-//         match self.map.get(point) {
-//             Some(elevation) => elevation.height == 'E',
-//             None => false
-//         }
-//     }
-// }
-
-// // S => only 'a'
-// // Same
-// // z => 'E'
-// fn char_cmp(h1: char, h2: char) -> bool {
-//     println!("{:?} <=> {:?}", h1, h2);
-//     match h1 {
-//         'S' => h2 == 'a',
-//         'z' => h2 == 'z' || h2 == 'E',
-//         _ => match (h2 as i32) - (h1 as i32) {
-//             0 | 1 => true,
-//             _ => false
-//         }
-//     }
-// }
 
 /// To avoid needing to get out your climbing gear,
 /// the elevation of the destination square can be at most one higher than the elevation of your current square;
@@ -229,17 +90,6 @@ fn successors(map: &Matrix<Elevation>, elevation: Elevation) -> Vec<Elevation> {
 fn is_passable(e1: &Elevation, e2: &Elevation) -> bool {
     e2.height_value() <= e1.height_value() + 1
 }
-
-fn height_value(height: char) -> u32 {
-    match height {
-        'E' => 'z' as u32,
-        'S' => 'a' as u32,
-        c => c as u32
-    }
-}
-
-type Point = (usize, usize);
-type Heightmap = Vec<Vec<Elevation>>;
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy, Ord, PartialOrd)]
 pub struct Elevation {
@@ -255,9 +105,10 @@ impl fmt::Display for Elevation {
         // stream: `f`. Returns `fmt::Result` which indicates whether the
         // operation succeeded or failed. Note that `write!` uses syntax which
         // is very similar to `println!`.
-        write!(f, "{}({},{})", self.height, self.row+1, self.column+1)
+        write!(f, "{}({},{})", self.height, self.row + 1, self.column + 1)
     }
 }
+
 impl Elevation {
     fn height_value(&self) -> u32 {
         match self.height {
@@ -270,7 +121,7 @@ impl Elevation {
 
 #[cfg(test)]
 mod test {
-    use crate::day12::{char_cmp, gen, solve_part1};
+    use crate::day12::{gen, solve_part1, solve_part2};
 
     const EXAMPLE: &str = r"Sabqponm
 abcryxxl
@@ -287,16 +138,10 @@ abdefghi";
     fn part1() {
         assert_eq!(31, solve_part1(&gen(EXAMPLE)));
     }
+    #[test]
+    fn part2() {
+        assert_eq!(29, solve_part2(&gen(EXAMPLE)));
+    }
 
-    // #[test]
-    // fn test_compare() {
-    //     assert_eq!(true, char_cmp('S', 'a'));
-    //     assert_eq!(true, char_cmp('a', 'a'));
-    //     assert_eq!(true, char_cmp('a', 'b'));
-    //     assert_eq!(false, char_cmp('a', 'c'));
-    //
-    //     assert_eq!(true, char_cmp('z', 'z'));
-    //     assert_eq!(true, char_cmp('z', 'E'));
-    // }
 }
 
