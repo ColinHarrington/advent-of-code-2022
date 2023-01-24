@@ -1,8 +1,7 @@
 use std::{cmp, fmt, iter};
 use std::borrow::BorrowMut;
-use std::fmt::format;
+use std::collections::HashMap;
 use std::iter::Cycle;
-use std::path::Iter;
 use std::str::Chars;
 use itertools::Itertools;
 use yaah::*;
@@ -20,18 +19,79 @@ fn solve_part1(jet_pattern: &'static str) -> usize {
         Shape::BOX,
     ].into_iter().cycle();
     let mut jet_cycle = jet_pattern.trim().chars().cycle();
-    // let mut jet_stream = jet_cycle.borrow_mut();
 
     for _ in 0..2022 {
-        chamber.drop_shape(jet_cycle.borrow_mut(), &shapes.next().unwrap());
-        // println!("Chamber:\n{chamber}");
+        chamber.drop_shape(jet_cycle.borrow_mut(), &shapes.next().unwrap(), false);
     }
-
-
     chamber.height()
 }
 
-type Position = (i32, i32);
+#[aoc(day17, part2)]
+fn solve_part2(jet_pattern: &'static str) -> u64 {
+    let mut chamber = Chamber::default();
+
+    let mut shapes = vec![
+        Shape::MINUS,
+        Shape::PLUS,
+        Shape::L,
+        Shape::I,
+        Shape::BOX,
+    ].into_iter().cycle();
+    let mut jet_cycle = jet_pattern.trim().chars().cycle();
+
+    let jet_pattern_size = jet_pattern.len();
+    let rocks: u64 = (jet_pattern_size * 3) as u64;
+
+
+    let heights: Vec<u64> = (0u64..rocks).into_iter()
+        .map(|_| {
+            chamber.drop_shape(jet_cycle.borrow_mut(), &shapes.next().unwrap(), false);
+            chamber.height() as u64
+        })
+        .collect();
+
+    let height_map: HashMap<u64, u64> = HashMap::from_iter(heights.iter()
+        .enumerate()
+        .map(|(i, &height)| (i + 1, height))
+        .map(|(rock, height)| (rock as u64, height))
+    );
+
+    let (init_height, pattern_height) = chamber.identify_cyclic_pattern().unwrap();
+
+    let init_steps = height_map.iter()
+        .filter(|(_, &height)| height <= init_height)
+        .map(|(&rock, _)| rock)
+        .max()
+        .unwrap();
+
+    let pattern_steps = height_map.iter()
+        .filter(|(_, &height)| height == (pattern_height + init_height))
+        .map(|(&rock, _)| rock)
+        .max()
+        .unwrap() - init_steps;
+
+    let cycle_space = 1_000_000_000_000u64 - init_steps;
+    let cycles = cycle_space / pattern_steps;
+
+    let extra_steps = cycle_space % pattern_steps;
+    let extra_height_position = init_steps + extra_steps;
+    let extra_height = height_map.get(&extra_height_position).unwrap() - init_height;
+
+    cycles * pattern_height + init_height + extra_height
+}
+
+fn match_distance(matches: &Vec<usize>) -> Option<usize> {
+    let distances: Vec<usize> = matches.iter().
+        tuple_windows()
+        .map(|(left, right)| right - left)
+        .unique()
+        .collect();
+    match distances.len() {
+        1 => Some(distances[0]),
+        _ => None
+    }
+}
+
 
 #[derive(Debug, Eq, PartialEq, Default)]
 struct Chamber {
@@ -68,13 +128,15 @@ impl Chamber {
         }
     }
 
-    fn drop_shape(&mut self, jets: &mut Cycle<Chars>, shape: &Shape) {
+    fn drop_shape(&mut self, jets: &mut Cycle<Chars>, shape: &Shape, debug: bool) {
         self.extend_height(3 + shape.height());
         let mut position = self.initial_position(shape);
         let sprite = shape.sprite();
 
         loop {
-            // self.draw_progress(shape, position);
+            if debug {
+                self.draw_progress(shape, position);
+            }
             position = self.jet(jets.next().unwrap(), &sprite, position);
             // self.draw_progress(shape, position);
             if self.at_rest(&sprite, position) {
@@ -90,8 +152,6 @@ impl Chamber {
             0 => (shape.height() + 2, 2usize),
             _ => (self.height() + 2 + shape.height(), 2usize)
         }
-
-
     }
     fn at_rest(&self, sprite: &Vec<Vec<char>>, position: (usize, usize)) -> bool {
         let (row, column) = position;
@@ -169,6 +229,37 @@ impl Chamber {
                 .for_each(|(c, _)| self.grid[row - r][column + c] = '.')
         }
     }
+
+    fn matches(&self, pattern: &[Vec<char>]) -> Vec<usize> {
+        self.grid.windows(pattern.len())
+            .enumerate()
+            .filter_map(|(i, window)| match window == pattern {
+                true => Some(i),
+                false => None
+            })
+            .collect()
+    }
+
+
+    fn cyclic_pattern(&self, pattern: &[Vec<char>]) -> Option<(usize, usize)> {
+        let matches = self.matches(pattern);
+        if let Some(dist) = match_distance(&matches) {
+            Some((matches[0].clone(), dist))
+        } else {
+            None
+        }
+    }
+
+    fn identify_cyclic_pattern(&self) -> Option<(u64, u64)> {
+        self.grid.windows(16)
+            .filter_map(|window| self.cyclic_pattern(window))
+            .map(|(init, pattern_size)| init..(init + pattern_size))
+            .map(|range| &self.grid[range])
+            .find_map(|pattern| match self.cyclic_pattern(pattern) {
+                Some((init, dist)) => Some((init as u64, dist as u64)),
+                None => None
+            })
+    }
 }
 
 
@@ -186,12 +277,8 @@ impl Shape {
         self.sprite().len()
     }
 
-    fn width(&self) -> usize {
-        self.sprite().first().unwrap().len()
-    }
-
     fn sprite(&self) -> Vec<Vec<char>> {
-        match (self) {
+        match self {
             Shape::MINUS => vec!["####"],
             Shape::PLUS => vec![
                 ".#.",
@@ -221,13 +308,18 @@ impl Shape {
 
 #[cfg(test)]
 mod test {
-    use crate::day17::{Chamber, solve_part1};
+    use crate::day17::{Chamber, solve_part1, solve_part2};
 
     const EXAMPLE: &str = r">>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>";
 
     #[test]
     fn part1() {
         assert_eq!(3068, solve_part1(EXAMPLE));
+    }
+
+    #[test]
+    fn part2() {
+        assert_eq!(1514285714288, solve_part2(EXAMPLE));
     }
 
     #[test]
@@ -292,5 +384,42 @@ mod test {
 +-------+";
         println!("{chamber}");
         assert_eq!(expected, format!("{chamber}"));
+    }
+
+    #[test]
+    fn test_slice_matching() {
+        let grid: Vec<Vec<char>> = vec![
+            "..####.",
+            "...#...",
+            "..###..",
+            "####...",
+            "..#....",
+            "..#....",
+            "..####.",
+            "...#...",
+            "..###..",
+            "####...",
+            "..#....",
+            "..#....",
+            "..####.",
+            "...#...",
+            "..###..",
+            "####...",
+            "..#....",
+            "..#....",
+        ].iter()
+            .map(|s| s.chars().collect())
+            .collect();
+
+        let chamber = Chamber { grid };
+
+        let pattern1: &[Vec<char>] = &chamber.grid[4..=5];
+        assert_eq!(vec![4, 10, 16], chamber.matches(pattern1));
+
+        let pattern2: &[Vec<char>] = &chamber.grid[4..5];
+        assert_eq!(vec![4, 5, 10, 11, 16, 17], chamber.matches(pattern2));
+
+        let pattern3: &[Vec<char>] = &chamber.grid[0..5];
+        assert_eq!(vec![0, 6, 12], chamber.matches(pattern3));
     }
 }
