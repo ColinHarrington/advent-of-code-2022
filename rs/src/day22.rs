@@ -6,7 +6,6 @@ use nom::IResult;
 use nom::multi::{many1, separated_list1};
 use nom::character::complete::u8 as nom_u8;
 use nom::sequence::{pair, separated_pair};
-use petgraph::visit::Walker;
 use yaah::*;
 
 #[aoc_generator(day22)]
@@ -15,11 +14,11 @@ fn read_monkey_map(input: &'static str) -> MonkeyMap {
 }
 
 #[aoc(day22, part1)]
-fn solve_part1(monkeyMap: &MonkeyMap) -> usize {
-    let (board, instructions) = monkeyMap;
+fn solve_part1(monkey_map: &MonkeyMap) -> usize {
+    let (board, instructions) = monkey_map;
 
     let result = instructions.iter()
-        .fold(board.initialPosition(), |pos, instruction| execute_instruction(instruction, pos, board));
+        .fold(board.initial_position(), |pos, instruction| execute_instruction(instruction, pos, board));
 
     result.password()
 }
@@ -130,7 +129,7 @@ impl From<Vec<Vec<char>>> for Board {
 }
 
 impl Board {
-    fn initialPosition(self: &Self) -> Position {
+    fn initial_position(self: &Self) -> Position {
         let first_row = self.map.get(0).unwrap();
         let initial = first_row.iter().position(|&t| t == '.').unwrap();
         Position {
@@ -274,7 +273,7 @@ mod test {
     use std::iter;
     use itertools::Itertools;
     use crate::day22::Instruction::{Rotate, Steps};
-    use crate::day22::{Direction, execute_instruction, Instruction, instructions, parse_input, Position, read_monkey_map, Rotation, solve_part1};
+    use crate::day22::{Direction, execute_instruction, Instruction, instructions, parse_input, Position, read_monkey_map, solve_part1};
     use crate::day22::Rotation::{Left, Right};
 
     const EXAMPLE: &str = r"        ...#
@@ -331,7 +330,7 @@ mod test {
     fn example_steps() {
         let (board, instructions) = read_monkey_map(&EXAMPLE);
 
-        let expectedPositions: Vec<(usize, usize, Direction)> = vec![
+        let expected_positions: Vec<(usize, usize, Direction)> = vec![
             (0, 10, Direction::Right),
             (0, 10, Direction::Down),
             (5, 10, Direction::Down),
@@ -347,10 +346,10 @@ mod test {
             (5, 7, Direction::Right),
         ];
 
-        let mut position = board.initialPosition();
+        let mut position = board.initial_position();
         assert_eq!(position, Position { row: 0, column: 8, facing: Direction::Right });
 
-        for (instruction, (row, column, facing)) in iter::zip(instructions, expectedPositions) {
+        for (instruction, (row, column, facing)) in iter::zip(instructions, expected_positions) {
             let expected = Position { facing, row, column };
             position = execute_instruction(&instruction, position, &board);
             // println!("{:?} == {:?}", expected, position);
@@ -362,8 +361,8 @@ mod test {
     /// So, the final password is 1000 * 6 + 4 * 8 + 0: 6032.
     #[test]
     fn part1() {
-        let monkeyMap = read_monkey_map(&EXAMPLE);
-        assert_eq!(solve_part1(&monkeyMap), 6032)
+        let monkey_map = read_monkey_map(&EXAMPLE);
+        assert_eq!(solve_part1(&monkey_map), 6032)
     }
 
     /// Facing is 0 for right (>), 1 for down (v), 2 for left (<), and 3 for up (^).
@@ -392,9 +391,9 @@ mod test {
         let (board, instructions) = read_monkey_map(&EXAMPLE);
         assert_eq!(instructions, example_instructions());
 
-        let pos = board.initialPosition();
-        let expectedInitialPosition = Position { row: 0, column: 8, facing: Direction::Right };
-        assert_eq!(pos, expectedInitialPosition)
+        let pos = board.initial_position();
+        let expected_initial_position = Position { row: 0, column: 8, facing: Direction::Right };
+        assert_eq!(pos, expected_initial_position)
     }
 
     #[test]
