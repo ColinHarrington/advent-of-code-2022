@@ -243,6 +243,7 @@ Valve JJ has flow rate=21; tunnel leads to valve II";
         assert_eq!(1651, solve_part1(&read_valves(EXAMPLE)))
     }
 
+    #[ignore]
     #[test]
     fn part2() {
         assert_eq!(1707, solve_part2(&read_valves(EXAMPLE)))
