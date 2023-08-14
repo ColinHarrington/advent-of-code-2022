@@ -1,6 +1,5 @@
 use std::cmp;
 use std::collections::{HashMap, HashSet};
-use nom::bytes::complete::tag;
 use nom::character::complete::{char as nom_char, line_ending};
 use nom::{IResult, Parser};
 use nom::character::complete::u8 as nom_u8;

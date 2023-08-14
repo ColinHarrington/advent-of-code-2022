@@ -63,7 +63,6 @@ fn encryption_file(input: &str) -> IResult<&str, Vec<i64>> {
 
 #[cfg(test)]
 mod test {
-    use std::ptr::read;
     use crate::day20::{Element, grove_coordinates, read_input, solve_part1, solve_part2};
 
     const EXAMPLE: &str = "1
