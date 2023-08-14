@@ -19,6 +19,7 @@ mod day18;
 mod day20;
 mod day22;
 mod day23;
+mod day24;
 
 use yaah::{aoc_lib, aoc_year};
 
