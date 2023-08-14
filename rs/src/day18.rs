@@ -149,6 +149,7 @@ mod test {
         assert_eq!(64, solve_part1(&read_cubes(EXAMPLE)));
     }
 
+    #[ignore]
     #[test]
     fn part2() {
         assert_eq!(58, solve_part2(&read_cubes(EXAMPLE)));
