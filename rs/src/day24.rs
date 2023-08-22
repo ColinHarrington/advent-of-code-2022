@@ -1,7 +1,4 @@
 use std::collections::{HashMap, HashSet};
-use std::fmt::Display;
-use std::io::Write;
-use std::str::FromStr;
 use itertools::Itertools;
 use nom::character::complete::{char as nom_char, line_ending, one_of};
 use nom::combinator::map;
@@ -83,7 +80,7 @@ fn walk(graph: &DiGraphMap<PositionT, ()>, start: PositionT, end: Position) -> (
         &graph,
         start,
         |(_, row, column)| (row, column) == end,
-        |e| 1,
+        |_| 1,
         |pos| manhattan_distance(&pos, &end),
     ).unwrap()
 }
@@ -142,6 +139,7 @@ fn possible_moves(position: &PositionT, open_positions: &HashSet<PositionT>, lcm
 type Position = (i32, i32);
 type PositionT = (usize, i32, i32);
 
+#[allow(dead_code)]
 fn print_valley(valley: &Valley, basin: &Basin) {
     let start: String = (0..basin.width).into_iter()
         .map(|n| if n == basin.start { '.' } else { '#' }).collect();
@@ -152,23 +150,6 @@ fn print_valley(valley: &Valley, basin: &Basin) {
     let end: String = (0..basin.width).into_iter()
         .map(|n| if n == basin.end { '.' } else { '#' }).collect();
     println!("#{end}#");
-}
-
-fn valley_from_blizzard(time: usize, blizzards: &Blizzards, basin: &Basin) -> Valley {
-    let mut valley = vec![vec!['.'; basin.width]; basin.height];
-    for (&position, direction) in blizzards {
-        let (row, column) = match direction {
-            Direction::UP => basin.move_up(time, position.clone()),
-            Direction::DOWN => basin.move_down(time, position.clone()),
-            Direction::LEFT => basin.move_left(time, position.clone()),
-            Direction::RIGHT => basin.move_right(time, position.clone()),
-        };
-        valley[row][column] = match valley[row][column] {
-            '.' => 'x',
-            _ => 'X'
-        }
-    }
-    valley
 }
 
 type Index2d = (usize, usize);
@@ -192,7 +173,7 @@ impl Basin {
         let height = valley.len();
         let lcm = lcm(height, width);
         let blizzards = HashMap::from_iter(
-            (0..height).cartesian_product((0..width))
+            (0..height).cartesian_product(0..width)
                 .map(|(row, column)| (row, column, valley[row][column]))
                 .filter_map(|(row, column, c)| match c {
                     '>' => Some(((row, column), Direction::RIGHT)),
@@ -212,7 +193,7 @@ impl Basin {
         }
     }
     fn move_up(&self, time: usize, (row, column): Index2d) -> Index2d {
-        let adjustment = ((time + (self.height - row)) % self.height);
+        let adjustment = (time + (self.height - row)) % self.height;
         ((self.height - adjustment) % self.height, column)
     }
     fn move_down(&self, time: usize, (row, column): Index2d) -> Index2d {
@@ -222,7 +203,7 @@ impl Basin {
         (row, (time + column) % self.width)
     }
     fn move_left(&self, time: usize, (row, column): Index2d) -> Index2d {
-        let adjustment = ((time + (self.width - column)) % self.width);
+        let adjustment = (time + (self.width - column)) % self.width;
         (row, (self.width - adjustment) % self.width)
     }
 
@@ -252,7 +233,7 @@ impl Basin {
             (-1, self.start as i32),
             (self.height as i32, self.end as i32),
         ];
-        (0..self.height).cartesian_product((0..self.width))
+        (0..self.height).cartesian_product(0..self.width)
             .filter_map(|(row, column)| match valley[row][column] {
                 '.' => Some((row as i32, column as i32)),
                 _ => None
@@ -294,36 +275,6 @@ impl TryFrom<char> for Direction {
             _ => Err(())
         }
     }
-}
-
-
-/**
-Construct a graph of open spaces over time
-Directed Graph, where edges are connected by each frame.  It'll loop over the LCM
-
-LxW is the max loop, but it could be Lowest-common-multiple
-
-Then use Astar to compute the shortest path.
-Node = Row,Column,time
-Edges are connecting nodes
-
-precompute every frame in LCM
-
-My Valley is 25x120 (27x122 with walls)
-The positions of the blizzards are deterministic.
-They could be put into a binary form. u128 and u32, mask/rotate to track
-
-Calculate all of the positions every frame?
-4 masks < > ^ v  two would be u32, two would be u128.
-Really they could be easily be computed on their own cycle => 25 frames for vertical ^ and v
-120 frames for > and < Then it's just the combinations.  AND the vericals and horizontals.  Rotate one and build the master
- */
-enum Step {
-    UP,
-    DOWN,
-    LEFT,
-    RIGHT,
-    WAIT,
 }
 
 /// https://www.hackertouch.com/least-common-multiple-in-rust.html
@@ -501,7 +452,7 @@ mod test {
     fn parse_basin() {
         let result = basin(EXAMPLE_1);
         println!("{:?}", result);
-        let (tail, basin) = result.unwrap();
+        let (_, basin) = result.unwrap();
         assert_eq!(basin.start, 0);
         assert_eq!(basin.end, 4);
 
