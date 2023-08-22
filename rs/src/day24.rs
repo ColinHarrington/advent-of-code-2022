@@ -5,6 +5,7 @@ use nom::combinator::map;
 use nom::IResult;
 use nom::multi::{many1, separated_list1};
 use nom::sequence::{delimited, preceded, terminated, tuple};
+use pathfinding::num_traits::Signed;
 use petgraph::algo::astar;
 use petgraph::graphmap::DiGraphMap;
 use yaah::*;
