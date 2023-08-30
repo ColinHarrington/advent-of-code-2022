@@ -19,6 +19,8 @@ nom = "7.1.1"
 pathfinding = "4.1.1"
 petgraph = "0.6.2"
 radix_fmt = "1.0.0"
+rayon = "1.7.0"
+bitflags = "2.4.0"
 
 [[bench]]
 name = "aoc-bench"
