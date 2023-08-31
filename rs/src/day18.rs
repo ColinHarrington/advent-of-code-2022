@@ -4,6 +4,7 @@ use itertools::Itertools;
 use nom::character::complete::{char as nom_char, line_ending};
 use nom::{IResult, Parser};
 use nom::character::complete::i8 as nom_i8;
+use nom::combinator::map;
 use nom::multi::separated_list1;
 use nom::sequence::separated_pair;
 use yaah::*;
@@ -124,10 +125,9 @@ fn cubes(input: &str) -> IResult<&str, Vec<Cube>> {
 }
 
 fn cube(input: &str) -> IResult<&str, Cube> {
-    separated_pair(nom_i8, nom_char(','),
-                   separated_pair(nom_i8, nom_char(','), nom_i8))
-        .parse(input)
-        .map(|(tail, (x, (y, z)))| (tail, Cube { x, y, z }))
+    map(separated_pair(nom_i8, nom_char(','),
+                       separated_pair(nom_i8, nom_char(','), nom_i8)),
+        |(x, (y, z))| Cube { x, y, z })(input)
 }
 
 #[cfg(test)]
