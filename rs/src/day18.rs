@@ -109,17 +109,6 @@ impl Cube {
     }
 }
 
-impl TryFrom<(i32, i32, i32)> for Cube {
-    type Error = &'static str;
-
-    fn try_from(value: (i32, i32, i32)) -> Result<Self, Self::Error> {
-        match (i8::try_from(value.0), i8::try_from(value.1), i8::try_from(value.2)) {
-            (Ok(x), Ok(y), Ok(z)) => Ok(Cube { x, y, z }),
-            _ => Err("Cube Negative coordinates not supported")
-        }
-    }
-}
-
 fn cubes(input: &str) -> IResult<&str, Vec<Cube>> {
     separated_list1(line_ending, cube)(input)
 }
