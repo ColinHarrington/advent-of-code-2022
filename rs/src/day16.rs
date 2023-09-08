@@ -1,7 +1,6 @@
-use std::collections::HashMap;
-use std::fmt;
+use std::collections::{HashMap, VecDeque};
 use std::hash::Hash;
-use std::iter::once;
+use std::ops::{Add, Div, Index, Mul, Sub};
 use itertools::Itertools;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
@@ -10,8 +9,8 @@ use nom::combinator::{map, verify};
 use nom::IResult;
 use nom::multi::{separated_list0, separated_list1};
 use nom::sequence::{preceded, tuple};
-use petgraph::algo::dijkstra;
-use petgraph::Outgoing;
+use petgraph::algo::floyd_warshall;
+use petgraph::data::ElementIterator;
 use petgraph::graphmap::UnGraphMap;
 use yaah::*;
 
@@ -21,140 +20,218 @@ fn read_valves(input: &'static str) -> Vec<Valve> {
 }
 
 #[aoc(day16, part1)]
-fn solve_part1(all_valves: &Vec<Valve>) -> u32 {
-    let nodes:Vec<ValveNode> = all_valves.iter()
-        .enumerate()
-        .map(|(i, valve)| (1 << i, valve))
-        .map(|(mask, valve)| ValveNode { name: valve.name.as_str(), flow_rate: valve.flow_rate, mask })
-        .collect();
+fn solve_part1(valves: &Vec<Valve>) -> u32 {
+    let volcano = build_volcano(valves.clone());
+    let (start, remaining) = volcano.start();
 
-    let nodes_by_name: HashMap<String, ValveNode> = nodes.iter()
-        .map(|node|(node.name.to_string(), node.clone()))
-        .collect();
-
-    let edges: Vec<(ValveNode, ValveNode, u32)> = all_valves.iter()
-        .map(|valve| valve.tunnels.iter()
-            .map(|name| nodes_by_name.get(name).unwrap())
-            .map(|&right| (nodes_by_name.get(&valve.name).unwrap().clone(), right.clone(), 1))
-            .collect::<Vec<(ValveNode, ValveNode, u32)>>()
-        )
-        .flatten()
-        .collect();
-
-    let graph: UnGraphMap<ValveNode, u32> = UnGraphMap::from_edges(edges);
-
-    let condensed_graph = condensed_graph(&graph);
-
-    let start = condensed_graph.nodes().find(|node| node.name == "AA").unwrap();
-    let initial_state = PathState { remaining: 30, open: vec![&start], current: &start };
-
-    most_pressure_release(initial_state, &condensed_graph)
+    max_pressure(State::initial(30,start, remaining), &volcano)
 }
 
-fn condensed_graph<'a>(graph: &'a UnGraphMap<ValveNode<'a>, u32>) -> UnGraphMap<ValveNode<'a>, u32> {
-    let edges:Vec<(ValveNode, ValveNode, u32)> = graph.nodes()
-        .map(|node|dijkstra(&graph, node, None, |_| 1).iter()
-            .filter(|(&other, _)| other != node)
-            .filter(|(&other, _)| other.name == "AA" || other.flow_rate != 0)
-            .map(|(&other, &cost)| (node, other, cost as u32))
-            .collect::<Vec<(ValveNode, ValveNode, u32)>>()
-        )
-        .flatten()
-        .collect();
-    UnGraphMap::from_edges(edges)
+/// all valve indexes =>
+fn distance_map(distances: HashMap<(ValveLabel, ValveLabel), u32>, valves: &Vec<Valve>) -> DistanceMap {
+    HashMap::from_iter(distances.into_iter()
+        .map(|((from, to), d)| (valves.iter().position(|valve| from == valve.name), to, d))
+        .map(|(from, to, d)| (from, valves.iter().position(|valve| to == valve.name), d))
+        .filter(|(from, to, _)| from.is_some() && to.is_some())
+        .map(|(from, to, d)| ((from.unwrap(), to.unwrap()), d)))
 }
+
+fn build_full_distance_map(valves: Vec<Valve>) -> HashMap<(ValveLabel, ValveLabel), u32> {
+    let valve_map: HashMap<ValveLabel, Valve> = HashMap::from_iter(valves.into_iter()
+        .map(|valve| (valve.name, valve.clone())));
+    let edges = valve_map.iter()
+        .map(|(name, valve)| valve.tunnels.iter()
+            .filter_map(|tunnel| valve_map.get(tunnel))
+            .map(|other| (name.clone(), other.name.clone()))
+        )
+        .flatten();
+    let graph: UnGraphMap<ValveLabel, u32> = UnGraphMap::from_edges(edges);
+
+    floyd_warshall(&graph, |_| 1u32).unwrap()
+}
+
+fn is_key_valve(valve: &Valve) -> bool {
+    valve.flow > 0 || valve.name == ['A', 'A']
+}
+
+
+fn build_volcano(all_valves: Vec<Valve>) -> Volcano {
+    let distances = build_full_distance_map(all_valves.clone());
+
+    let valves: Vec<Valve> = all_valves.into_iter()
+        .filter(is_key_valve)
+        .sorted_by_key(|valve| valve.flow)
+        .rev()
+        .collect();
+    let flows = valves.iter()
+        .map(|valve| valve.flow)
+        .collect();
+    let map = distance_map(distances, &valves);
+    Volcano {
+        valves,
+        flows,
+        map,
+    }
+}
+
+/// valveLabel => location
+/// pressure
+/// valves, Distances,
+///
+///
+/// References to distances
+/// sorted valves by flow rate
+///
+/// First round seeded by AA to every other node.
+///
+/// State {
+///     Visited bitmask
+///     pressure => u32
+///     minutes remaining
+///     current valve
+/// }
+/// is the bitmask the right thing?  Would it be better to have a vec of unvisited valves?
+/// Is the cost of constructing the list of options from a bitmask worth the time and iteration cost?
+/// Flags to indexes?  That might work vs iterating
+///
+/// How about tracking unvisited instead?  Then in part2 we can seed unvisited
+
+fn max_pressure(start: State, volcano: &Volcano) -> u32 {
+    let mut best = 0;
+
+    let mut queue: VecDeque<State> = VecDeque::from([start]);
+    dbg!(&queue);
+    while let Some(state) = queue.pop_front() {
+        if state.pressure > best {
+            best = state.pressure
+        } else if best > state.upper_bound(&volcano) {
+            continue;
+        }
+        state.remaining(volcano.flows.len())
+            .into_iter()
+            .filter_map(|valve| state.travel(valve, volcano))
+            .sorted_by_key(|s| state.pressure)
+            .for_each(|branch| queue.push_back(branch));
+    }
+    best
+}
+
+#[derive(Debug, Copy, Clone, Ord, PartialOrd, PartialEq, Eq)]
+pub struct State {
+    minutes: u32,
+    current: usize,
+    remaining: u16,
+    pressure: u32,
+}
+
+impl State {
+    fn initial(minutes: u32, current: usize, remaining: u16) -> Self {
+        Self {
+            minutes,
+            current,
+            remaining,
+            pressure: 0,
+        }
+    }
+    fn remains(&self, valve: &usize) -> bool {
+        self.remaining & (1u16 << valve) != 0
+    }
+
+    fn remaining(&self, valve_count: usize) -> Vec<usize> {
+        (0..valve_count)
+            .into_iter()
+            // .inspect(|i| println!("{i}"))
+            .filter(|valve| self.remains(valve))
+            .collect()
+    }
+
+    /// Best possible case
+    ///     Every remaining valve is reachable with a distance of 1
+    ///     They are processed in greatest to least
+    fn upper_bound(&self, volcano: &Volcano) -> u32 {
+        volcano.flows.iter()
+            .enumerate()
+            .filter(|(valve, _)| self.remains(valve))
+            .map(|(v, flow)| flow)
+            .take(self.minutes.div(2) as usize)
+            .fold(
+                (self.minutes, self.pressure),
+                |(min, total), flow| (min.sub(2), total.add(flow.mul(min - 2))),
+            ).1
+    }
+
+    fn travel(&self, valve: usize, volcano: &Volcano) -> Option<State> {
+        let distance = volcano.distance(self.current, valve);
+        if let Some(minutes) = self.minutes.checked_sub(distance + 1) {
+            if minutes > 0 {
+                let flow = volcano.flows.get(valve).unwrap();
+                Some(State {
+                    remaining: self.remaining & !(1u16 << valve),
+                    pressure: self.pressure.add(flow.mul(minutes)),
+                    minutes,
+                    current: valve,
+                })
+            } else { None }
+        } else { None }
+    }
+}
+
+
+type DistanceMap = HashMap<(usize, usize), u32>;
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Volcano {
+    valves: Vec<Valve>,
+    flows: Vec<u32>,
+    map: DistanceMap,
+}
+
+impl Volcano {
+    fn distance(&self, from: usize, to: usize) -> u32 {
+        *self.map.get(&(from, to)).unwrap()
+    }
+
+    fn position(&self, name: ValveLabel) -> usize {
+        self.valves.iter()
+            .position(|valve| valve.name == name).unwrap()
+    }
+
+    fn start(&self) -> (usize, u16) {
+        let start = self.position(['A', 'A']);
+        let remaining = (0..self.valves.len())
+            .filter(|v| start.ne(v))
+            .map(|valve| 1 << valve)
+            .fold(0, |acc, valve| acc | valve);
+        (start, remaining)
+    }
+}
+
 
 #[aoc(day16, part2)]
-fn solve_part2(all_valves: &Vec<Valve>) -> u32 {
-    let nodes:Vec<ValveNode> = all_valves.iter()
-        .enumerate()
-        .map(|(i, valve)| (1 << i, valve))
-        .map(|(mask, valve)| ValveNode { name: valve.name.as_str(), flow_rate: valve.flow_rate, mask })
-        .collect();
+fn solve_part2(valves: &Vec<Valve>) -> u32 {
+    let volcano = build_volcano(valves.clone());
+    let (start, remaining) = volcano.start();
+    let initial_state = State::initial(30,start, remaining);
 
-    let nodes_by_name: HashMap<String, ValveNode> = nodes.iter()
-        .map(|node|(node.name.to_string(), node.clone()))
-        .collect();
-
-    let edges: Vec<(ValveNode, ValveNode, u32)> = all_valves.iter()
-        .map(|valve| valve.tunnels.iter()
-            .map(|name| nodes_by_name.get(name).unwrap())
-            .map(|&right| (nodes_by_name.get(&valve.name).unwrap().clone(), right.clone(), 1))
-            .collect::<Vec<(ValveNode, ValveNode, u32)>>()
-        )
-        .flatten()
-        .collect();
-
-    let graph: UnGraphMap<ValveNode, u32> = UnGraphMap::from_edges(edges);
-    let condensed_graph = condensed_graph(&graph);
-
-    let start = condensed_graph.nodes().find(|node| node.name == "AA").unwrap();
-    let initial_state = PathState { remaining: 26, open: vec![&start], current: &start };
-    most_pressure_release(initial_state, &condensed_graph)
+    max_pressure(initial_state, &volcano)
 }
 
-fn most_pressure_release(state: PathState, graph: &UnGraphMap<ValveNode, u32>) -> u32 {
-    state.current.flow_rate * state.remaining + max_child_pressure(graph, &state)
-}
 
-fn max_child_pressure(graph: &UnGraphMap<ValveNode, u32>, state: &PathState) -> u32 {
-    graph.edges_directed(*state.current, Outgoing)
-        .map(|(_, child, &distance)| (child, distance))
-        .filter(|(child, _)| state.closed(child))
-        .filter(|(_, distance)| state.remaining > *distance)
-        .map(|(child, distance)| most_pressure_release(move_to(state, &child, distance), graph))
-        .max()
-        .unwrap_or(0)
-}
+pub type ValveLabel = [char; 2];
 
-#[derive(Debug, Eq, PartialEq, Clone, Ord, PartialOrd, Hash)]
-struct PathState<'a> {
-    remaining: u32,
-    open: Vec<&'a ValveNode<'a>>,
-    current: &'a ValveNode<'a>,
-}
+pub struct ValveName([char; 2]);
 
-impl PathState<'_> {
-    fn closed(&self, node: &ValveNode) -> bool {
-        !self.open.contains(&node)
-    }
-}
-
-impl fmt::Display for PathState<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let open = self.open.iter().map(|node| node.name.clone()).join(",");
-        write!(f, "{} minutes left, at {} already open=[{open}]", self.remaining, self.current)
-    }
-}
-
-fn move_to<'a>(state: &'a PathState<'a>, current: &'a ValveNode<'a>, distance: u32) -> PathState<'a> {
-    let open = state.open.clone().into_iter().chain(once(current)).collect();
-    // let open = [state.open.clone(), vec![current]].concat();
-    PathState {
-        remaining: state.remaining - distance - 1,
-        open,
-        current,
-    }
-}
-
-#[derive(Debug, Eq, PartialEq, Copy, Clone, Ord, PartialOrd, Hash)]
-pub struct ValveNode<'a> {
-    name: &'a str,
-    flow_rate: u32,
-    mask: u64,
-}
-
-impl fmt::Display for ValveNode<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}({})", self.name, self.flow_rate)
+impl From<&str> for ValveName {
+    fn from(value: &str) -> Self {
+        Self(value.chars().collect::<Vec<char>>().try_into().unwrap())
     }
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Ord, PartialOrd, Hash)]
 pub struct Valve {
-    name: String,
-    flow_rate: u32,
-    tunnels: Vec<String>,
+    name: ValveLabel,
+    flow: u32,
+    tunnels: Vec<ValveLabel>,
 }
 
 fn valves(input: &str) -> IResult<&str, Vec<Valve>> {
@@ -166,35 +243,35 @@ fn valve(input: &str) -> IResult<&str, Valve> {
         preceded(tag("Valve "), valve_label),
         preceded(tag(" has "), valve_flow_rate),
         preceded(tag("; "), tunnels)
-    )), |(name, flow_rate, tunnels)| Valve { name, flow_rate, tunnels })(input)
+    )), |(name, flow, tunnels)| Valve { name, flow, tunnels })(input)
 }
-
 
 fn valve_flow_rate(input: &str) -> IResult<&str, u32> {
     preceded(tag("flow rate="), nom_u32)(input)
 }
 
-fn tunnels(input: &str) -> IResult<&str, Vec<String>> {
+fn tunnels(input: &str) -> IResult<&str, Vec<ValveLabel>> {
     alt((valve_tunnels, valve_tunnel))(input)
 }
 
-fn valve_tunnels(input: &str) -> IResult<&str, Vec<String>> {
+fn valve_tunnels(input: &str) -> IResult<&str, Vec<ValveLabel>> {
     preceded(tag("tunnels lead to valves "),
              separated_list0(tag(", "), valve_label))(input)
 }
 
-fn valve_tunnel(input: &str) -> IResult<&str, Vec<String>> {
+fn valve_tunnel(input: &str) -> IResult<&str, Vec<ValveLabel>> {
     preceded(tag("tunnel leads to valve "),
-             map(valve_label, |label: String| vec![label]))(input)
+             map(valve_label, |label: ValveLabel| vec![label]))(input)
 }
 
-fn valve_label(input: &str) -> IResult<&str, String> {
-    map(verify(alpha1, |s: &str| s.len() == 2), |s: &str| s.to_string())(input)
+fn valve_label(input: &str) -> IResult<&str, ValveLabel> {
+    map(verify(alpha1, |s: &str| s.len() == 2),
+        |s: &str| s.chars().collect::<Vec<char>>().try_into().unwrap())(input)
 }
 
 #[cfg(test)]
 mod test {
-    use crate::day16::{read_valves, solve_part1, solve_part2, tunnels, valve_flow_rate, valve_label, valve_tunnels, valves};
+    use crate::day16::{read_valves, solve_part1, solve_part2, tunnels, valve_flow_rate, valve_label, valve_tunnels, ValveName, valves};
 
     const EXAMPLE: &str = r"Valve AA has flow rate=0; tunnels lead to valves DD, II, BB
 Valve BB has flow rate=13; tunnels lead to valves CC, AA
@@ -209,8 +286,8 @@ Valve JJ has flow rate=21; tunnel leads to valve II";
 
     #[test]
     fn parse_valve_label() {
-        assert_eq!(Ok(("", "AA".to_string())), valve_label("AA"));
-        assert_eq!(Ok(("", "Az".to_string())), valve_label("Az"));
+        assert_eq!(Ok(("", ['A', 'A'])), valve_label("AA"));
+        assert_eq!(Ok(("", ['A', 'z'])), valve_label("Az"));
 
         assert!(valve_label("ABC").is_err());
         assert!(valve_label("A0").is_err());
@@ -225,8 +302,8 @@ Valve JJ has flow rate=21; tunnel leads to valve II";
 
     #[test]
     fn parse_valve_tunnels() {
-        assert_eq!(Ok(("", vec!["DD".to_string(), "II".to_string(), "BB".to_string()])), valve_tunnels("tunnels lead to valves DD, II, BB"));
-        assert_eq!(Ok(("", vec!["GG".to_string()])), tunnels("tunnel leads to valve GG"));
+        assert_eq!(Ok(("", vec![['D', 'D'], ['I', 'I'], ['B', 'B']])), valve_tunnels("tunnels lead to valves DD, II, BB"));
+        assert_eq!(Ok(("", vec![['G', 'G']])), tunnels("tunnel leads to valve GG"));
     }
 
     #[test]
@@ -243,9 +320,14 @@ Valve JJ has flow rate=21; tunnel leads to valve II";
         assert_eq!(1651, solve_part1(&read_valves(EXAMPLE)))
     }
 
-    #[ignore]
     #[test]
     fn part2() {
+        assert_eq!(1707, solve_part2(&read_valves(EXAMPLE)))
+    }
+
+    #[test]
+    fn part2a() {
+        let name = ValveName::from("AA");
         assert_eq!(1707, solve_part2(&read_valves(EXAMPLE)))
     }
 }
