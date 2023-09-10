@@ -36,6 +36,7 @@ fn solve_part2(structures: &Vec<RockStructure>) -> u32 {
         let grain = cave.drop_grain_with_floor().unwrap();
         cave.add_grain(grain);
     }
+    #[cfg(feature = "stdout")]
     println!("{cave}");
 
     cave.map.into_iter()

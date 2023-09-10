@@ -39,6 +39,7 @@ fn solve_part2(input: &(Stacks, Vec<Move>)) -> String {
 }
 
 fn crane_single_items(mut stacks: Stacks, moves: Vec<Move>) -> Stacks {
+    #[cfg(feature = "debug")]
     print_stacks(&stacks);
     for Move { count, from, to } in moves.iter() {
         for _ in 0..*count {
@@ -46,11 +47,13 @@ fn crane_single_items(mut stacks: Stacks, moves: Vec<Move>) -> Stacks {
             stacks[*to as usize - 1].push(c);
         }
     }
+    #[cfg(feature = "debug")]
     print_stacks(&stacks);
     stacks
 }
 
 fn crane_multiple_items(mut stacks: Stacks, moves: Vec<Move>) -> Stacks {
+    #[cfg(feature = "debug")]
     print_stacks(&stacks);
     for Move { count, from, to } in moves.iter() {
         let mut load: Vec<char> = vec![];
@@ -59,11 +62,12 @@ fn crane_multiple_items(mut stacks: Stacks, moves: Vec<Move>) -> Stacks {
         }
         load.iter().rev().for_each(|c| stacks[*to as usize - 1].push(*c));
     }
+    #[cfg(feature = "debug")]
     print_stacks(&stacks);
     stacks
 }
 
-
+#[cfg(feature = "debug")]
 fn print_stacks(stacks: &Stacks) {
     let mut sorted_stacks = stacks.clone();
     sorted_stacks.sort_by_key(|s| s.len());
