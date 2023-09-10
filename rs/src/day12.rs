@@ -40,13 +40,12 @@ fn hike(map: &Matrix<Elevation>, from: char, to: char) -> u32 {
 
 	let edges = map
 		.items()
-		.map(|(_, &elevation)| {
-			successors(map, elevation.clone())
+		.flat_map(|(_, &elevation)| {
+			successors(map, elevation)
 				.iter()
 				.map(|&other| (elevation, other, 1u32))
 				.collect::<Vec<(Elevation, Elevation, u32)>>()
 		})
-		.flatten()
 		.collect::<Vec<(Elevation, Elevation, u32)>>();
 
 	for (left, right, weight) in edges {

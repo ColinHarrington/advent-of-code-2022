@@ -9,7 +9,6 @@ fn solve_part1(input: &'static str) -> u32 {
 		.find_map(|i| {
 			match &input[i..(i + 4)]
 				.chars()
-				.into_iter()
 				.collect::<HashSet<char>>()
 				.len()
 			{
@@ -28,7 +27,6 @@ fn solve_part2(input: &'static str) -> u32 {
 		.find_map(|i| {
 			match &input[i..(i + 14)]
 				.chars()
-				.into_iter()
 				.collect::<HashSet<char>>()
 				.len()
 			{

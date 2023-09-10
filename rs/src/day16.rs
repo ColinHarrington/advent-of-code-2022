@@ -52,14 +52,13 @@ fn build_full_distance_map(valves: Vec<Valve>) -> HashMap<(ValveLabel, ValveLabe
 		HashMap::from_iter(valves.into_iter().map(|valve| (valve.name, valve.clone())));
 	let edges = valve_map
 		.iter()
-		.map(|(name, valve)| {
+		.flat_map(|(name, valve)| {
 			valve
 				.tunnels
 				.iter()
 				.filter_map(|tunnel| valve_map.get(tunnel))
-				.map(|other| (name.clone(), other.name.clone()))
-		})
-		.flatten();
+				.map(|other| (*name, other.name))
+		});
 	let graph: UnGraphMap<ValveLabel, u32> = UnGraphMap::from_edges(edges);
 
 	floyd_warshall(&graph, |_| 1u32).unwrap()
@@ -104,7 +103,6 @@ impl State {
 
 	fn remaining(&self, valve_count: usize) -> Vec<usize> {
 		(0..valve_count)
-			.into_iter()
 			.filter(|valve| self.remains(valve))
 			.collect()
 	}
@@ -216,7 +214,7 @@ impl Volcano {
 	fn generate_remaining_combinations(&self) -> Vec<(u16, u16)> {
 		let max = 2usize.pow(self.valves.len().sub(1) as u32).sub(1) as u16;
 		let half = max >> 1;
-		(1..=half).into_iter().map(|a| (a, !a & max)).collect_vec()
+		(1..=half).map(|a| (a, !a & max)).collect_vec()
 	}
 }
 

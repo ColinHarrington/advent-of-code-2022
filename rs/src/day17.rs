@@ -34,7 +34,6 @@ fn solve_part2(jet_pattern: &'static str) -> u64 {
 	let rocks: u64 = (jet_pattern_size * 3) as u64;
 
 	let heights: Vec<u64> = (0u64..rocks)
-		.into_iter()
 		.map(|_| {
 			chamber.drop_shape(jet_cycle.borrow_mut(), &shapes.next().unwrap(), false);
 			chamber.height() as u64
@@ -249,11 +248,7 @@ impl Chamber {
 
 	fn cyclic_pattern(&self, pattern: &[Vec<char>]) -> Option<(usize, usize)> {
 		let matches = self.matches(pattern);
-		if let Some(dist) = match_distance(&matches) {
-			Some((matches[0].clone(), dist))
-		} else {
-			None
-		}
+		match_distance(&matches).map(|dist| (matches[0], dist))
 	}
 
 	fn identify_cyclic_pattern(&self) -> Option<(u64, u64)> {
@@ -262,10 +257,7 @@ impl Chamber {
 			.filter_map(|window| self.cyclic_pattern(window))
 			.map(|(init, pattern_size)| init..(init + pattern_size))
 			.map(|range| &self.grid[range])
-			.find_map(|pattern| match self.cyclic_pattern(pattern) {
-				Some((init, dist)) => Some((init as u64, dist as u64)),
-				None => None,
-			})
+			.find_map(|pattern| self.cyclic_pattern(pattern).map(|(init, dist)| (init as u64, dist as u64)))
 	}
 }
 

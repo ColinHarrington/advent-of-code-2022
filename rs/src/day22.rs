@@ -25,7 +25,7 @@ fn solve_part1(monkey_map: &MonkeyMap) -> usize {
 fn execute_instruction(instruction: &Instruction, position: Position, board: &Board) -> Position {
 	match instruction {
 		Instruction::Rotate(r) => position.rotate(r),
-		Instruction::Steps(steps) => position.steps(*steps as usize, board),
+		Instruction::Steps(steps) => position.steps(*steps, board),
 	}
 }
 
@@ -95,7 +95,7 @@ impl Position {
 		}
 	}
 
-	fn next(self: &Self, board: &Board) -> Option<Position> {
+	fn next(&self, board: &Board) -> Option<Position> {
 		let next = self.next_step(board);
 		let tile = board.tile(&next);
 		match tile {
@@ -126,7 +126,7 @@ impl From<Vec<Vec<char>>> for Board {
 }
 
 impl Board {
-	fn initial_position(self: &Self) -> Position {
+	fn initial_position(&self) -> Position {
 		let first_row = self.map.get(0).unwrap();
 		let initial = first_row.iter().position(|&t| t == '.').unwrap();
 		Position {
@@ -136,13 +136,12 @@ impl Board {
 		}
 	}
 
-	fn tile(self: &Self, position: &Position) -> Tile {
-		self.map
+	fn tile(&self, position: &Position) -> Tile {
+		(*self.map
 			.get(position.row)
 			.unwrap()
 			.get(position.column)
-			.unwrap_or(&' ')
-			.clone()
+			.unwrap_or(&' '))
 			.try_into()
 			.unwrap()
 	}
@@ -247,7 +246,7 @@ fn read_monkey_map(input: &'static str) -> MonkeyMap {
 fn rotation(input: &str) -> IResult<&str, Instruction> {
 	nom_map(
 		alt((rotate_right_instruction, rotate_left_instruction)),
-		|r| Instruction::Rotate(r),
+		Instruction::Rotate,
 	)(input)
 }
 
@@ -344,7 +343,7 @@ mod test {
 	 */
 	#[test]
 	fn example_steps() {
-		let (board, instructions) = read_monkey_map(&EXAMPLE);
+		let (board, instructions) = read_monkey_map(EXAMPLE);
 
 		let expected_positions: Vec<(usize, usize, Direction)> = vec![
 			(0, 10, Direction::Right),
@@ -388,7 +387,7 @@ mod test {
 	/// So, the final password is 1000 * 6 + 4 * 8 + 0: 6032.
 	#[test]
 	fn part1() {
-		let monkey_map = read_monkey_map(&EXAMPLE);
+		let monkey_map = read_monkey_map(EXAMPLE);
 		assert_eq!(solve_part1(&monkey_map), 6032)
 	}
 
@@ -414,7 +413,7 @@ mod test {
 
 	#[test]
 	fn read_input() {
-		let (board, instructions) = read_monkey_map(&EXAMPLE);
+		let (board, instructions) = read_monkey_map(EXAMPLE);
 		assert_eq!(instructions, example_instructions());
 
 		let pos = board.initial_position();

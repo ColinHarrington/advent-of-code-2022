@@ -43,7 +43,7 @@ fn solve_part2(input: &Vec<PacketData>) -> u32 {
 		.chain(dividers.iter().cloned())
 		.collect();
 
-	packets.sort_by(|a, b| a.cmp(b));
+	packets.sort();
 
 	packets
 		.iter()

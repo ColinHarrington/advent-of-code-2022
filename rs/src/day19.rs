@@ -7,7 +7,6 @@ use nom::sequence::{delimited, separated_pair, tuple};
 use nom::IResult;
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use std::cmp::max;
-use std::convert::identity;
 use std::fmt::{Display, Formatter};
 use std::iter;
 use std::ops::{Add, Div, Mul, Sub};
@@ -45,7 +44,7 @@ fn dfs(blueprint: &Blueprint, state: State) -> u16 {
 		blueprint.next_ore_bot(&state),
 	]
 	.into_iter()
-	.filter_map(identity)
+	.flatten()
 	.collect();
 	if let Some(next_geode_state) = blueprint.next_geode_bot(&state) {
 		let threshold = next_geode_state.minutes_remaining;

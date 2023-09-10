@@ -30,7 +30,7 @@ pub struct Computer {
 impl From<&Vec<Monkey>> for Computer {
 	fn from(monkeys: &Vec<Monkey>) -> Self {
 		Self {
-			registers: HashMap::from_iter(monkeys.iter().map(|m| (m.symbol, m.expression.clone()))),
+			registers: HashMap::from_iter(monkeys.iter().map(|m| (m.symbol, m.expression))),
 		}
 	}
 }
@@ -81,7 +81,7 @@ impl Computer {
 	}
 
 	fn read(&self, symbol: Symbol) -> Expression {
-		self.registers.get(&symbol).unwrap().clone()
+		*self.registers.get(&symbol).unwrap()
 	}
 
 	fn write(&mut self, symbol: Symbol, expression: Expression) {
@@ -179,7 +179,7 @@ fn binary_expression(input: &str) -> IResult<&str, Expression> {
 }
 
 fn expression_value(input: &str) -> IResult<&str, Expression> {
-	map(nom_i64, |value| Expression::Value(value))(input)
+	map(nom_i64, Expression::Value)(input)
 }
 
 fn symbol(input: &str) -> IResult<&str, Symbol> {

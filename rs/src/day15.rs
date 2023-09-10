@@ -30,7 +30,6 @@ fn tuning_frequency(location: Location) -> i64 {
 fn find_distress_signal(rows: RangeInclusive<i32>, sensors: &Vec<Sensor>) -> i64 {
 	let beacon = rows
 		.clone()
-		.into_iter()
 		.find_map(|row| {
 			sensors
 				.iter()

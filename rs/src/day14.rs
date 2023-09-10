@@ -47,8 +47,7 @@ fn map_rocks(structure: &RockStructure) -> Vec<Position> {
 		.0
 		.iter()
 		.tuple_windows()
-		.map(|(a, b)| map_rock_line(a, b))
-		.flatten()
+		.flat_map(|(a, b)| map_rock_line(a, b))
 		.dedup()
 		.collect()
 }
@@ -78,8 +77,7 @@ impl Cave {
 	fn from_structures(structures: &Vec<RockStructure>, has_floor: bool) -> Self {
 		let rocks = structures
 			.iter()
-			.map(|structure| map_rocks(structure))
-			.flatten()
+			.flat_map(map_rocks)
 			.dedup()
 			.collect::<Vec<Position>>();
 

@@ -98,7 +98,6 @@ fn walk(
 /// The next step is create a graph of open positions, connecting nodes to their possible next moves.
 fn build_graph(basin: &Basin) -> DiGraphMap<PositionT, ()> {
 	let valley_sprite: Vec<Valley> = (0..(basin.lcm))
-		.into_iter()
 		.map(|time| basin.valley_at(time))
 		.collect();
 
@@ -106,14 +105,12 @@ fn build_graph(basin: &Basin) -> DiGraphMap<PositionT, ()> {
 		valley_sprite
 			.iter()
 			.enumerate()
-			.map(|(t, valley)| basin.open_positions(t, valley))
-			.flatten(),
+			.flat_map(|(t, valley)| basin.open_positions(t, valley)),
 	);
 
 	let edges: Vec<(PositionT, PositionT)> = open_positons
 		.iter()
-		.map(|position| possible_moves(position, &open_positons, basin.lcm))
-		.flatten()
+		.flat_map(|position| possible_moves(position, &open_positons, basin.lcm))
 		.collect();
 
 	DiGraphMap::<PositionT, ()>::from_edges(edges)
@@ -133,8 +130,8 @@ fn possible_moves(
 	vec![(1, 0), (0, 1), (-1, 0), (0, -1), (0, 0)]
 		.into_iter()
 		.map(|(r1, c1)| (time_next, row + r1, column + c1))
-		.filter(|p1| open_positions.contains(&p1))
-		.map(|p1| (position.clone(), p1))
+		.filter(|p1| open_positions.contains(p1))
+		.map(|p1| (*position, p1))
 		.collect()
 }
 
@@ -144,7 +141,6 @@ type PositionT = (usize, i32, i32);
 #[allow(dead_code)]
 fn print_valley(valley: &Valley, basin: &Basin) {
 	let start: String = (0..basin.width)
-		.into_iter()
 		.map(|n| if n == basin.start { '.' } else { '#' })
 		.collect();
 	println!("#{start}#");
@@ -153,7 +149,6 @@ fn print_valley(valley: &Valley, basin: &Basin) {
 		.map(|row| row.iter().collect::<String>())
 		.for_each(|line| println!("#{line}#"));
 	let end: String = (0..basin.width)
-		.into_iter()
 		.map(|n| if n == basin.end { '.' } else { '#' })
 		.collect();
 	println!("#{end}#");
@@ -219,10 +214,10 @@ impl Basin {
 		let mut valley = vec![vec!['.'; self.width]; self.height];
 		self.blizzards.iter().for_each(|(position, direction)| {
 			let (row, column) = match direction {
-				Direction::UP => self.move_up(time, position.clone()),
-				Direction::DOWN => self.move_down(time, position.clone()),
-				Direction::LEFT => self.move_left(time, position.clone()),
-				Direction::RIGHT => self.move_right(time, position.clone()),
+				Direction::UP => self.move_up(time, *position),
+				Direction::DOWN => self.move_down(time, *position),
+				Direction::LEFT => self.move_left(time, *position),
+				Direction::RIGHT => self.move_right(time, *position),
 			};
 			valley[row][column] = match valley[row][column] {
 				'.' => direction.to_char(),
@@ -295,9 +290,7 @@ fn gcd(first: usize, second: usize) -> usize {
 	let mut max = first;
 	let mut min = second;
 	if min > max {
-		let val = max;
-		max = min;
-		min = val;
+		std::mem::swap(&mut max, &mut min);
 	}
 
 	loop {
