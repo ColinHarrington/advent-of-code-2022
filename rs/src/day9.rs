@@ -17,7 +17,8 @@ fn solve_part1(motions: &Vec<Motion>) -> u32 {
     for motion in motions {
         rope.advance(motion);
     }
-    // rope.print_history();
+    #[cfg(feature = "debug")]
+    rope.print_history();
     rope.history.len() as u32
 }
 
@@ -39,7 +40,8 @@ fn solve_part2(motions: &Vec<Motion>) -> u32 {
     for motion in motions {
         rope.advance(motion);
     }
-    // rope.print_history();
+    #[cfg(feature = "debug")]
+    rope.print_history();
     rope.history.len() as u32
 }
 
@@ -96,10 +98,12 @@ impl Rope {
                 }
             }
         }
-        // self.print();
+        #[cfg(feature = "debug")]
+        self.print();
     }
 
     /// Attempted to print the state of the Knots in the format given
+    #[cfg(feature = "debug")]
     fn print(&self) {
         let head = self.knots[0];
         let tail = self.knots.last().unwrap();
@@ -134,6 +138,8 @@ impl Rope {
         }
         println!("");
     }
+
+    #[cfg(feature = "debug")]
     fn print_history(&self) {
         let xs: Vec<i32> = self.history.iter()
             .map(|p| p.0)
@@ -211,6 +217,7 @@ fn parse_motion(input: &str) -> IResult<&str, Motion> {
 }
 
 
+#[cfg(test)]
 mod test {
     use crate::day9::{gen, Motion, parse_motion, parse_motions, solve_part1, solve_part2};
 

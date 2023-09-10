@@ -213,6 +213,7 @@ impl State {
         }
     }
 
+    #[cfg(feature = "debug")]
     fn print(&self) {
         if self.ore_bots > 0 {
             let robot = if self.ore_bots > 1 { "robots" } else { "robot" };
@@ -230,6 +231,7 @@ impl State {
             println!("X geode-cracking robots crack X geodes; you now have {} open geodes.", self.geode)
         }
     }
+    #[cfg(feature = "debug")]
     fn advance(&self) -> State {
         State {
             ore: self.ore.add(self.ore_bots),
@@ -290,18 +292,20 @@ fn geode_cost(input: &str) -> IResult<&str, (u16, u16)> {
 
 #[cfg(test)]
 mod test {
+    #[cfg(feature = "debug")]
     use std::collections::HashMap;
     use crate::day19::{Blueprint, dfs, Flag, next_bot, read_blueprints, solve_part1, State};
 
     const EXAMPLE: &str = r"Blueprint 1: Each ore robot costs 4 ore. Each clay robot costs 2 ore. Each obsidian robot costs 3 ore and 14 clay. Each geode robot costs 2 ore and 7 obsidian.
 Blueprint 2: Each ore robot costs 2 ore. Each clay robot costs 3 ore. Each obsidian robot costs 3 ore and 8 clay. Each geode robot costs 3 ore and 12 obsidian.";
 
+    #[cfg(feature = "debug")]
     #[derive(Debug, Eq, PartialEq)]
     enum Bot {
         ORE,
         CLAY,
         OBSIDIAN,
-        GEODE
+        GEODE,
     }
 
     #[test]
@@ -323,6 +327,7 @@ Blueprint 2: Each ore robot costs 2 ore. Each clay robot costs 3 ore. Each obsid
     }
 
     /// Test that helped iron out corner cases
+    #[cfg(feature = "debug")]
     #[test]
     fn blueprint1_walkthrough() {
         let blueprint = Blueprint {

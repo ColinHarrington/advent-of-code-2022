@@ -1,4 +1,3 @@
-use std::ops::Index;
 use nom::character::complete::{i64 as nom_i64, line_ending};
 use nom::IResult;
 use nom::multi::separated_list1;
@@ -85,7 +84,6 @@ mod test {
     #[test]
     fn example_coordinates() {
         let numbers = vec![1, 2, -3, 4, 0, 3, -2];
-        let expected = vec![1, 2, -3, 3, -2, 0, 4];
         assert_eq!(grove_coordinates(numbers), 3);
     }
 

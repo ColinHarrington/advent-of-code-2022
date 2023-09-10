@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::ops::{Add, Div, Mul, Sub};
-use std::str::FromStr;
 use nom::branch::alt;
 use nom::bytes::complete::{tag, take};
 use nom::character::complete::{char as nom_char, i64 as nom_i64, line_ending, one_of};
@@ -180,7 +179,7 @@ fn symbol(input: &str) -> IResult<&str, Symbol> {
 
 #[cfg(test)]
 mod test {
-    use crate::day21::{binary_expression, Expression, expression_value, MathOp, Monkey, monkey, read_monkeys, solve_part1, solve_part2, symbol};
+    use crate::day21::{binary_expression, Expression, MathOp, Monkey, monkey, read_monkeys, solve_part1, solve_part2, symbol};
     use crate::day21::Expression::{Binary, Value};
     use crate::day21::MathOp::{ADD, DIVIDE, MULTIPLY, SUBTRACT};
 
