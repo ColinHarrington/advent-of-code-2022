@@ -1,6 +1,6 @@
-use std::fmt::{Display, Formatter};
 use itertools::Itertools;
 use radix_fmt::radix_5;
+use std::fmt::{Display, Formatter};
 use yaah::*;
 
 pub struct Snafu {
@@ -15,12 +15,16 @@ impl Snafu {
         i64::from_str_radix("2".repeat(self.value.len()).as_str(), 5).unwrap()
     }
     fn base5(&self) -> i64 {
-        i64::from_str_radix(self.value
-                                .clone()
-                                .into_iter()
-                                .map(decode_snafu_char)
-                                .join("")
-                                .as_str(), 5).unwrap()
+        i64::from_str_radix(
+            self.value
+                .clone()
+                .into_iter()
+                .map(decode_snafu_char)
+                .join("")
+                .as_str(),
+            5,
+        )
+        .unwrap()
     }
 }
 
@@ -31,7 +35,7 @@ fn decode_snafu_char(c: char) -> char {
         '0' => '2',
         '1' => '3',
         '2' => '4',
-        _ => panic!()
+        _ => panic!(),
     }
 }
 
@@ -42,7 +46,7 @@ fn encode_snafu_char(c: char) -> char {
         '2' => '0',
         '3' => '1',
         '4' => '2',
-        _ => panic!()
+        _ => panic!(),
     }
 }
 
@@ -61,13 +65,17 @@ impl From<i64> for Snafu {
 
 impl From<String> for Snafu {
     fn from(value: String) -> Self {
-        Snafu { value: value.chars().collect() }
+        Snafu {
+            value: value.chars().collect(),
+        }
     }
 }
 
 impl From<&str> for Snafu {
     fn from(value: &str) -> Self {
-        Snafu { value: value.chars().collect() }
+        Snafu {
+            value: value.chars().collect(),
+        }
     }
 }
 
@@ -77,26 +85,25 @@ impl Display for Snafu {
     }
 }
 
-
 #[aoc_generator(day25)]
 fn read_fuel_requirements(input: &'static str) -> Vec<Snafu> {
-    input.lines()
-        .map(|line| line.into())
-        .collect()
+    input.lines().map(|line| line.into()).collect()
 }
 
 #[aoc(day25, part1)]
 fn solve_part1(fuel_requirements: &Vec<Snafu>) -> String {
-    Snafu::from(fuel_requirements.iter()
-        .map(|snafu| snafu.to_i64())
-        .sum::<i64>())
-        .to_string()
+    Snafu::from(
+        fuel_requirements
+            .iter()
+            .map(|snafu| snafu.to_i64())
+            .sum::<i64>(),
+    )
+    .to_string()
 }
-
 
 #[cfg(test)]
 mod test {
-    use crate::day25::{read_fuel_requirements, Snafu, solve_part1};
+    use crate::day25::{read_fuel_requirements, solve_part1, Snafu};
 
     const EXAMPLE: &str = r"1=-0-2
 12111

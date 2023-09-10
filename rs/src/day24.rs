@@ -1,12 +1,12 @@
-use std::collections::{HashMap, HashSet};
 use itertools::Itertools;
 use nom::character::complete::{char as nom_char, line_ending, one_of};
 use nom::combinator::map;
-use nom::IResult;
 use nom::multi::{many1, separated_list1};
 use nom::sequence::{delimited, preceded, terminated, tuple};
+use nom::IResult;
 use petgraph::algo::astar;
 use petgraph::graphmap::DiGraphMap;
+use std::collections::{HashMap, HashSet};
 use yaah::*;
 
 #[aoc_generator(day24)]
@@ -16,17 +16,13 @@ fn parse_basin(input: &'static str) -> Basin {
 
 fn exit(input: &str) -> IResult<&str, usize> {
     map(
-        tuple(
-            (many1(nom_char('#')), nom_char('.'), many1(nom_char('#')))
-        ), |(walls, _, _)| walls.len() - 1)(input)
+        tuple((many1(nom_char('#')), nom_char('.'), many1(nom_char('#')))),
+        |(walls, _, _)| walls.len() - 1,
+    )(input)
 }
 
 fn valley_line(input: &str) -> IResult<&str, Vec<char>> {
-    delimited(
-        nom_char('#'),
-        many1(one_of(".<>^v")),
-        nom_char('#'),
-    )(input)
+    delimited(nom_char('#'), many1(one_of(".<>^v")), nom_char('#'))(input)
 }
 
 fn valley(input: &str) -> IResult<&str, Valley> {
@@ -38,12 +34,11 @@ fn basin(input: &str) -> IResult<&str, Basin> {
         tuple((
             terminated(exit, line_ending),
             valley,
-            preceded(line_ending, exit)
+            preceded(line_ending, exit),
         )),
         |(start, valley, end)| Basin::from(start, valley, end),
     )(input)
 }
-
 
 #[aoc(day24, part1)]
 fn solve_part1(basin: &Basin) -> i32 {
@@ -62,27 +57,30 @@ fn solve_part2(basin: &Basin) -> i32 {
     let start = (-1, basin.start as i32);
     let end = (basin.height as i32, basin.end as i32);
 
-    vec![
-        (start, end),
-        (end, start),
-        (start, end)].into_iter()
-        .fold(0, |time, (from, to)| time + walk(&graph,
-                                                position_time(from, time as usize % basin.lcm),
-                                                to).0)
+    vec![(start, end), (end, start), (start, end)]
+        .into_iter()
+        .fold(0, |time, (from, to)| {
+            time + walk(&graph, position_time(from, time as usize % basin.lcm), to).0
+        })
 }
 
 fn position_time(position: Position, time: usize) -> PositionT {
     (time, position.0, position.1)
 }
 
-fn walk(graph: &DiGraphMap<PositionT, ()>, start: PositionT, end: Position) -> (i32, Vec<PositionT>) {
+fn walk(
+    graph: &DiGraphMap<PositionT, ()>,
+    start: PositionT,
+    end: Position,
+) -> (i32, Vec<PositionT>) {
     astar(
         &graph,
         start,
         |(_, row, column)| (row, column) == end,
         |_| 1,
         |pos| manhattan_distance(&pos, &end),
-    ).unwrap()
+    )
+    .unwrap()
 }
 
 /// The blizzards operate in a cycle
@@ -99,16 +97,21 @@ fn walk(graph: &DiGraphMap<PositionT, ()>, start: PositionT, end: Position) -> (
 ///
 /// The next step is create a graph of open positions, connecting nodes to their possible next moves.
 fn build_graph(basin: &Basin) -> DiGraphMap<PositionT, ()> {
-    let valley_sprite: Vec<Valley> = (0..(basin.lcm)).into_iter()
+    let valley_sprite: Vec<Valley> = (0..(basin.lcm))
+        .into_iter()
         .map(|time| basin.valley_at(time))
         .collect();
 
-    let open_positons: HashSet<PositionT> = HashSet::from_iter(valley_sprite.iter()
-        .enumerate()
-        .map(|(t, valley)| basin.open_positions(t, valley))
-        .flatten());
+    let open_positons: HashSet<PositionT> = HashSet::from_iter(
+        valley_sprite
+            .iter()
+            .enumerate()
+            .map(|(t, valley)| basin.open_positions(t, valley))
+            .flatten(),
+    );
 
-    let edges: Vec<(PositionT, PositionT)> = open_positons.iter()
+    let edges: Vec<(PositionT, PositionT)> = open_positons
+        .iter()
         .map(|position| possible_moves(position, &open_positons, basin.lcm))
         .flatten()
         .collect();
@@ -120,16 +123,15 @@ fn manhattan_distance(from: &PositionT, to: &Position) -> i32 {
     (from.1 - to.0).abs() + (from.2 - to.1).abs()
 }
 
-fn possible_moves(position: &PositionT, open_positions: &HashSet<PositionT>, lcm: usize) -> Vec<(PositionT, PositionT)> {
+fn possible_moves(
+    position: &PositionT,
+    open_positions: &HashSet<PositionT>,
+    lcm: usize,
+) -> Vec<(PositionT, PositionT)> {
     let (time, row, column) = *position;
     let time_next = (time + 1) % lcm;
-    vec![
-        (1, 0),
-        (0, 1),
-        (-1, 0),
-        (0, -1),
-        (0, 0),
-    ].into_iter()
+    vec![(1, 0), (0, 1), (-1, 0), (0, -1), (0, 0)]
+        .into_iter()
         .map(|(r1, c1)| (time_next, row + r1, column + c1))
         .filter(|p1| open_positions.contains(&p1))
         .map(|p1| (position.clone(), p1))
@@ -141,14 +143,19 @@ type PositionT = (usize, i32, i32);
 
 #[allow(dead_code)]
 fn print_valley(valley: &Valley, basin: &Basin) {
-    let start: String = (0..basin.width).into_iter()
-        .map(|n| if n == basin.start { '.' } else { '#' }).collect();
+    let start: String = (0..basin.width)
+        .into_iter()
+        .map(|n| if n == basin.start { '.' } else { '#' })
+        .collect();
     println!("#{start}#");
-    valley.iter()
+    valley
+        .iter()
         .map(|row| row.iter().collect::<String>())
         .for_each(|line| println!("#{line}#"));
-    let end: String = (0..basin.width).into_iter()
-        .map(|n| if n == basin.end { '.' } else { '#' }).collect();
+    let end: String = (0..basin.width)
+        .into_iter()
+        .map(|n| if n == basin.end { '.' } else { '#' })
+        .collect();
     println!("#{end}#");
 }
 
@@ -173,15 +180,16 @@ impl Basin {
         let height = valley.len();
         let lcm = lcm(height, width);
         let blizzards = HashMap::from_iter(
-            (0..height).cartesian_product(0..width)
+            (0..height)
+                .cartesian_product(0..width)
                 .map(|(row, column)| (row, column, valley[row][column]))
                 .filter_map(|(row, column, c)| match c {
                     '>' => Some(((row, column), Direction::RIGHT)),
                     '<' => Some(((row, column), Direction::LEFT)),
                     '^' => Some(((row, column), Direction::UP)),
                     'v' => Some(((row, column), Direction::DOWN)),
-                    _ => None
-                })
+                    _ => None,
+                }),
         );
         Basin {
             width,
@@ -209,22 +217,21 @@ impl Basin {
 
     fn valley_at(&self, time: usize) -> Valley {
         let mut valley = vec![vec!['.'; self.width]; self.height];
-        self.blizzards.iter()
-            .for_each(|(position, direction)| {
-                let (row, column) = match direction {
-                    Direction::UP => self.move_up(time, position.clone()),
-                    Direction::DOWN => self.move_down(time, position.clone()),
-                    Direction::LEFT => self.move_left(time, position.clone()),
-                    Direction::RIGHT => self.move_right(time, position.clone()),
-                };
-                valley[row][column] = match valley[row][column] {
-                    '.' => direction.to_char(),
-                    c => match c.to_digit(10) {
-                        Some(digit) => char::from_digit(digit + 1, 10).unwrap(),
-                        None => '2'
-                    }
-                }
-            });
+        self.blizzards.iter().for_each(|(position, direction)| {
+            let (row, column) = match direction {
+                Direction::UP => self.move_up(time, position.clone()),
+                Direction::DOWN => self.move_down(time, position.clone()),
+                Direction::LEFT => self.move_left(time, position.clone()),
+                Direction::RIGHT => self.move_right(time, position.clone()),
+            };
+            valley[row][column] = match valley[row][column] {
+                '.' => direction.to_char(),
+                c => match c.to_digit(10) {
+                    Some(digit) => char::from_digit(digit + 1, 10).unwrap(),
+                    None => '2',
+                },
+            }
+        });
         valley
     }
 
@@ -233,10 +240,11 @@ impl Basin {
             (-1, self.start as i32),
             (self.height as i32, self.end as i32),
         ];
-        (0..self.height).cartesian_product(0..self.width)
+        (0..self.height)
+            .cartesian_product(0..self.width)
             .filter_map(|(row, column)| match valley[row][column] {
                 '.' => Some((row as i32, column as i32)),
-                _ => None
+                _ => None,
             })
             .chain(entrances.into_iter())
             .map(|(row, column)| (time, row, column))
@@ -258,7 +266,7 @@ impl Direction {
             Direction::UP => '^',
             Direction::DOWN => 'v',
             Direction::LEFT => '<',
-            Direction::RIGHT => '>'
+            Direction::RIGHT => '>',
         }
     }
 }
@@ -272,7 +280,7 @@ impl TryFrom<char> for Direction {
             'v' => Ok(Direction::DOWN),
             '<' => Ok(Direction::LEFT),
             '>' => Ok(Direction::RIGHT),
-            _ => Err(())
+            _ => Err(()),
         }
     }
 }
@@ -305,8 +313,8 @@ fn gcd(first: usize, second: usize) -> usize {
 
 #[cfg(test)]
 mod test {
+    use crate::day24::{basin, exit, solve_part1, solve_part2, valley, valley_line, Index2d};
     use itertools::Itertools;
-    use crate::day24::{basin, exit, Index2d, solve_part1, solve_part2, valley, valley_line};
 
     const EXAMPLE_1: &str = r"#.#####
 #.....#
@@ -426,7 +434,6 @@ mod test {
         let (_, end) = exit(last_line).unwrap();
         assert_eq!(end, 4);
     }
-
 
     #[test]
     fn parse_valley_line() {
