@@ -2,7 +2,7 @@ use std::collections::{HashSet, VecDeque};
 use std::ops::{Add, Not, Sub};
 use itertools::Itertools;
 use nom::character::complete::{char as nom_char, line_ending};
-use nom::{IResult, Parser};
+use nom::IResult;
 use nom::character::complete::i8 as nom_i8;
 use nom::combinator::map;
 use nom::multi::separated_list1;

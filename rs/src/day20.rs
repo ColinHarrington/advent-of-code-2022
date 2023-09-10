@@ -1,4 +1,3 @@
-use std::ops::Index;
 use nom::character::complete::{i64 as nom_i64, line_ending};
 use nom::IResult;
 use nom::multi::separated_list1;

@@ -213,6 +213,7 @@ impl State {
         }
     }
 
+    #[cfg(feature = "debug")]
     fn print(&self) {
         if self.ore_bots > 0 {
             let robot = if self.ore_bots > 1 { "robots" } else { "robot" };
@@ -230,6 +231,7 @@ impl State {
             println!("X geode-cracking robots crack X geodes; you now have {} open geodes.", self.geode)
         }
     }
+    #[cfg(feature = "debug")]
     fn advance(&self) -> State {
         State {
             ore: self.ore.add(self.ore_bots),
@@ -301,7 +303,7 @@ Blueprint 2: Each ore robot costs 2 ore. Each clay robot costs 3 ore. Each obsid
         ORE,
         CLAY,
         OBSIDIAN,
-        GEODE
+        GEODE,
     }
 
     #[test]
@@ -323,6 +325,7 @@ Blueprint 2: Each ore robot costs 2 ore. Each clay robot costs 3 ore. Each obsid
     }
 
     /// Test that helped iron out corner cases
+    #[cfg(feature = "debug")]
     #[test]
     fn blueprint1_walkthrough() {
         let blueprint = Blueprint {

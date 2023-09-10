@@ -49,10 +49,10 @@ fn solve_part2(instructions: &Vec<Instruction>) -> String {
     }
     image.chunks(40)
         .map(|line| line.iter().collect::<String>())
-        // .inspect(|line|println!("{line}"))
         .join("\n")
 }
 
+#[cfg(feature = "debug")]
 fn draw(cycle: i32, sprite: i32) {
     let n = cycle % 40;
     let position = (cycle - 1) % 40;

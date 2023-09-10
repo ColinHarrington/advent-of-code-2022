@@ -6,12 +6,9 @@ use nom::IResult;
 use nom::multi::{many1, separated_list1};
 use nom::character::complete::u8 as nom_u8;
 use nom::sequence::{pair, separated_pair};
+// use pathfinding::matrix::Matrix;
 use yaah::*;
 
-#[aoc_generator(day22)]
-fn read_monkey_map(input: &'static str) -> MonkeyMap {
-    parse_input(input).unwrap().1
-}
 
 #[aoc(day22, part1)]
 fn solve_part1(monkey_map: &MonkeyMap) -> usize {
@@ -82,10 +79,6 @@ impl Position {
         };
         Position { row, ..*self }
     }
-
-
-    // Each instruction ends in a position.
-    // fn execute(instruction: Instruction) -> Position
 
     fn steps(&self, steps: usize, board: &Board) -> Position {
         if steps == 0 {
@@ -228,6 +221,21 @@ impl FromStr for Rotation {
             _ => Err(()),
         }
     }
+}
+// type Point2D = (usize,usize);
+// pub struct CubeFace {
+//     grid: Matrix<Point2D>
+// }
+
+// #[derive(Debug, Eq, PartialEq)]
+// pub enum FaceOrientation {
+//     TOP, NORTH, EAST, SOUTH, WEST, BOTTOM
+// }
+
+
+#[aoc_generator(day22)]
+fn read_monkey_map(input: &'static str) -> MonkeyMap {
+    parse_input(input).unwrap().1
 }
 
 fn rotation(input: &str) -> IResult<&str, Instruction> {
