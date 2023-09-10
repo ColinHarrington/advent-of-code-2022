@@ -9,173 +9,173 @@ use yaah::*;
 
 #[aoc_generator(day10)]
 fn gen(input: &'static str) -> Vec<Instruction> {
-    parse_instructions(input).unwrap().1
+	parse_instructions(input).unwrap().1
 }
 
 #[aoc(day10, part1)]
 fn solve_part1(instructions: &Vec<Instruction>) -> i32 {
-    let mut x = 1;
-    let mut cycle = 1;
-    let mut signal_strength = 0;
-    for instruction in instructions {
-        signal_strength = boost_signal(signal_strength, cycle, x);
-        if let Instruction::ADDX(v) = instruction {
-            cycle += 1;
-            signal_strength = boost_signal(signal_strength, cycle, x);
-            cycle += 1;
-            x += v;
-        } else {
-            cycle += 1;
-        }
-    }
-    signal_strength
+	let mut x = 1;
+	let mut cycle = 1;
+	let mut signal_strength = 0;
+	for instruction in instructions {
+		signal_strength = boost_signal(signal_strength, cycle, x);
+		if let Instruction::ADDX(v) = instruction {
+			cycle += 1;
+			signal_strength = boost_signal(signal_strength, cycle, x);
+			cycle += 1;
+			x += v;
+		} else {
+			cycle += 1;
+		}
+	}
+	signal_strength
 }
 
 #[aoc(day10, part2)]
 fn solve_part2(instructions: &Vec<Instruction>) -> String {
-    let mut cycle = 1;
-    let mut sprite = 0;
-    let mut image: Vec<char> = vec![];
-    for instruction in instructions {
-        image.push(pixel(cycle, sprite));
-        if let Instruction::ADDX(v) = instruction {
-            cycle += 1;
-            image.push(pixel(cycle, sprite));
-            cycle += 1;
-            sprite += v;
-        } else {
-            cycle += 1;
-        }
-    }
-    image
-        .chunks(40)
-        .map(|line| line.iter().collect::<String>())
-        .join("\n")
+	let mut cycle = 1;
+	let mut sprite = 0;
+	let mut image: Vec<char> = vec![];
+	for instruction in instructions {
+		image.push(pixel(cycle, sprite));
+		if let Instruction::ADDX(v) = instruction {
+			cycle += 1;
+			image.push(pixel(cycle, sprite));
+			cycle += 1;
+			sprite += v;
+		} else {
+			cycle += 1;
+		}
+	}
+	image
+		.chunks(40)
+		.map(|line| line.iter().collect::<String>())
+		.join("\n")
 }
 
 #[cfg(feature = "debug")]
 fn draw(cycle: i32, sprite: i32) {
-    let n = cycle % 40;
-    let position = (cycle - 1) % 40;
-    let c = match lit(position, sprite) {
-        true => '#',
-        false => '.',
-    };
-    match n {
-        0 => print!("{c}\n"),
-        _ => print!("{c}"),
-    }
+	let n = cycle % 40;
+	let position = (cycle - 1) % 40;
+	let c = match lit(position, sprite) {
+		true => '#',
+		false => '.',
+	};
+	match n {
+		0 => print!("{c}\n"),
+		_ => print!("{c}"),
+	}
 }
 
 fn pixel(cycle: i32, sprite: i32) -> char {
-    let position = (cycle - 1) % 40;
-    match lit(position, sprite) {
-        true => '#',
-        false => '.',
-    }
+	let position = (cycle - 1) % 40;
+	match lit(position, sprite) {
+		true => '#',
+		false => '.',
+	}
 }
 
 fn lit(n: i32, sprite: i32) -> bool {
-    ((sprite)..(sprite + 3)).contains(&n)
+	((sprite)..(sprite + 3)).contains(&n)
 }
 
 fn boost_signal(signal: i32, cycle: i32, x: i32) -> i32 {
-    match cycle % 40 {
-        20 => signal + cycle * x,
-        _ => signal,
-    }
+	match cycle % 40 {
+		20 => signal + cycle * x,
+		_ => signal,
+	}
 }
 
 #[derive(Debug, PartialEq)]
 pub enum Instruction {
-    NOOP,
-    ADDX(i32),
+	NOOP,
+	ADDX(i32),
 }
 
 fn parse_instructions(input: &str) -> IResult<&str, Vec<Instruction>> {
-    separated_list1(newline, parse_instruction)(input)
+	separated_list1(newline, parse_instruction)(input)
 }
 
 fn parse_instruction(input: &str) -> IResult<&str, Instruction> {
-    alt((parse_noop, parse_addx))(input)
+	alt((parse_noop, parse_addx))(input)
 }
 
 fn parse_noop(input: &str) -> IResult<&str, Instruction> {
-    let (input, _) = tag("noop")(input)?;
-    Ok((input, Instruction::NOOP))
+	let (input, _) = tag("noop")(input)?;
+	Ok((input, Instruction::NOOP))
 }
 
 fn parse_addx(input: &str) -> IResult<&str, Instruction> {
-    let (input, value) = preceded(tag("addx "), nom_i32)(input)?;
-    Ok((input, Instruction::ADDX(value)))
+	let (input, value) = preceded(tag("addx "), nom_i32)(input)?;
+	Ok((input, Instruction::ADDX(value)))
 }
 
 #[cfg(test)]
 mod test {
-    use crate::day10::{
-        gen, parse_addx, parse_instruction, parse_instructions, parse_noop, solve_part1,
-        solve_part2, Instruction,
-    };
+	use crate::day10::{
+		gen, parse_addx, parse_instruction, parse_instructions, parse_noop, solve_part1,
+		solve_part2, Instruction,
+	};
 
-    const SMALL_EXAMPLE: &str = r"noop
+	const SMALL_EXAMPLE: &str = r"noop
 addx 3
 addx -5";
 
-    #[test]
-    fn noop() {
-        assert_eq!(Ok(("", Instruction::NOOP)), parse_noop("noop"));
-    }
+	#[test]
+	fn noop() {
+		assert_eq!(Ok(("", Instruction::NOOP)), parse_noop("noop"));
+	}
 
-    #[test]
-    fn addx() {
-        assert_eq!(Ok(("", Instruction::ADDX(77))), parse_addx("addx 77"));
-    }
+	#[test]
+	fn addx() {
+		assert_eq!(Ok(("", Instruction::ADDX(77))), parse_addx("addx 77"));
+	}
 
-    #[test]
-    fn instruction() {
-        assert_eq!(Ok(("", Instruction::NOOP)), parse_instruction("noop"));
-        assert_eq!(
-            Ok(("", Instruction::ADDX(77))),
-            parse_instruction("addx 77")
-        );
-    }
+	#[test]
+	fn instruction() {
+		assert_eq!(Ok(("", Instruction::NOOP)), parse_instruction("noop"));
+		assert_eq!(
+			Ok(("", Instruction::ADDX(77))),
+			parse_instruction("addx 77")
+		);
+	}
 
-    #[test]
-    fn instructions() {
-        let (_, instructions) = parse_instructions(SMALL_EXAMPLE).unwrap();
+	#[test]
+	fn instructions() {
+		let (_, instructions) = parse_instructions(SMALL_EXAMPLE).unwrap();
 
-        let expected_instructions = vec![
-            Instruction::NOOP,
-            Instruction::ADDX(3),
-            Instruction::ADDX(-5),
-        ];
+		let expected_instructions = vec![
+			Instruction::NOOP,
+			Instruction::ADDX(3),
+			Instruction::ADDX(-5),
+		];
 
-        instructions
-            .iter()
-            .zip(expected_instructions.iter())
-            .for_each(|(instruction, expected)| assert_eq!(instruction, expected));
-    }
+		instructions
+			.iter()
+			.zip(expected_instructions.iter())
+			.for_each(|(instruction, expected)| assert_eq!(instruction, expected));
+	}
 
-    #[test]
-    fn part1() {
-        assert_eq!(0, solve_part1(&gen(SMALL_EXAMPLE)));
+	#[test]
+	fn part1() {
+		assert_eq!(0, solve_part1(&gen(SMALL_EXAMPLE)));
 
-        assert_eq!(13140, solve_part1(&gen(LARGE_EXAMPLE)));
-    }
+		assert_eq!(13140, solve_part1(&gen(LARGE_EXAMPLE)));
+	}
 
-    #[test]
-    fn part2() {
-        let expected = r"##..##..##..##..##..##..##..##..##..##..
+	#[test]
+	fn part2() {
+		let expected = r"##..##..##..##..##..##..##..##..##..##..
 ###...###...###...###...###...###...###.
 ####....####....####....####....####....
 #####.....#####.....#####.....#####.....
 ######......######......######......####
 #######.......#######.......#######....."
-            .to_string();
-        assert_eq!(expected, solve_part2(&gen(LARGE_EXAMPLE)));
-    }
+			.to_string();
+		assert_eq!(expected, solve_part2(&gen(LARGE_EXAMPLE)));
+	}
 
-    const LARGE_EXAMPLE: &str = r"addx 15
+	const LARGE_EXAMPLE: &str = r"addx 15
 addx -11
 addx 6
 addx -3
