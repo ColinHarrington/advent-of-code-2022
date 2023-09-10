@@ -19,7 +19,7 @@ fn solve_part1(instructions: &Vec<Instruction>) -> i32 {
 	let mut signal_strength = 0;
 	for instruction in instructions {
 		signal_strength = boost_signal(signal_strength, cycle, x);
-		if let Instruction::ADDX(v) = instruction {
+		if let Instruction::Addx(v) = instruction {
 			cycle += 1;
 			signal_strength = boost_signal(signal_strength, cycle, x);
 			cycle += 1;
@@ -38,7 +38,7 @@ fn solve_part2(instructions: &Vec<Instruction>) -> String {
 	let mut image: Vec<char> = vec![];
 	for instruction in instructions {
 		image.push(pixel(cycle, sprite));
-		if let Instruction::ADDX(v) = instruction {
+		if let Instruction::Addx(v) = instruction {
 			cycle += 1;
 			image.push(pixel(cycle, sprite));
 			cycle += 1;
@@ -88,8 +88,8 @@ fn boost_signal(signal: i32, cycle: i32, x: i32) -> i32 {
 
 #[derive(Debug, PartialEq)]
 pub enum Instruction {
-	NOOP,
-	ADDX(i32),
+	Noop,
+	Addx(i32),
 }
 
 fn parse_instructions(input: &str) -> IResult<&str, Vec<Instruction>> {
@@ -102,12 +102,12 @@ fn parse_instruction(input: &str) -> IResult<&str, Instruction> {
 
 fn parse_noop(input: &str) -> IResult<&str, Instruction> {
 	let (input, _) = tag("noop")(input)?;
-	Ok((input, Instruction::NOOP))
+	Ok((input, Instruction::Noop))
 }
 
 fn parse_addx(input: &str) -> IResult<&str, Instruction> {
 	let (input, value) = preceded(tag("addx "), nom_i32)(input)?;
-	Ok((input, Instruction::ADDX(value)))
+	Ok((input, Instruction::Addx(value)))
 }
 
 #[cfg(test)]
@@ -123,19 +123,19 @@ addx -5";
 
 	#[test]
 	fn noop() {
-		assert_eq!(Ok(("", Instruction::NOOP)), parse_noop("noop"));
+		assert_eq!(Ok(("", Instruction::Noop)), parse_noop("noop"));
 	}
 
 	#[test]
 	fn addx() {
-		assert_eq!(Ok(("", Instruction::ADDX(77))), parse_addx("addx 77"));
+		assert_eq!(Ok(("", Instruction::Addx(77))), parse_addx("addx 77"));
 	}
 
 	#[test]
 	fn instruction() {
-		assert_eq!(Ok(("", Instruction::NOOP)), parse_instruction("noop"));
+		assert_eq!(Ok(("", Instruction::Noop)), parse_instruction("noop"));
 		assert_eq!(
-			Ok(("", Instruction::ADDX(77))),
+			Ok(("", Instruction::Addx(77))),
 			parse_instruction("addx 77")
 		);
 	}
@@ -145,9 +145,9 @@ addx -5";
 		let (_, instructions) = parse_instructions(SMALL_EXAMPLE).unwrap();
 
 		let expected_instructions = vec![
-			Instruction::NOOP,
-			Instruction::ADDX(3),
-			Instruction::ADDX(-5),
+			Instruction::Noop,
+			Instruction::Addx(3),
+			Instruction::Addx(-5),
 		];
 
 		instructions

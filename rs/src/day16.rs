@@ -21,21 +21,20 @@ fn read_valves(input: &'static str) -> Vec<Valve> {
 }
 
 #[aoc(day16, part1)]
-fn solve_part1(valves: &Vec<Valve>) -> u32 {
-	let volcano = build_volcano(valves.clone());
+fn solve_part1(valves: &[Valve]) -> u32 {
+	let volcano = build_volcano(valves.to_vec());
 
 	volcano.max_pressure(volcano.start_state(30))
 }
 
 #[aoc(day16, part2)]
-fn solve_part2(valves: &Vec<Valve>) -> u32 {
-	build_volcano(valves.clone()).max_combo()
+fn solve_part2(valves: &[Valve]) -> u32 {
+	build_volcano(valves.to_owned()).max_combo()
 }
 
-/// all valve indexes =>
 fn distance_map(
 	distances: HashMap<(ValveLabel, ValveLabel), u32>,
-	valves: &Vec<Valve>,
+	valves: &[Valve],
 ) -> DistanceMap {
 	HashMap::from_iter(
 		distances
@@ -80,12 +79,18 @@ fn build_volcano(all_valves: Vec<Valve>) -> Volcano {
 	Volcano { valves, flows, map }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct State {
 	minutes: u32,
 	current: usize,
 	remaining: u16,
 	pressure: u32,
+}
+
+impl PartialOrd<Self> for State {
+	fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+		Some(self.cmp(other))
+	}
 }
 
 impl Ord for State {

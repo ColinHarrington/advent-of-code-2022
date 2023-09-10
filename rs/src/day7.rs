@@ -55,9 +55,9 @@ fn build_fs(commands: Vec<Command>) -> FileSystem {
 				let path = build_path(&cwd);
 				let size: u32 = entries
 					.into_iter()
-					.filter_map(|e| match e {
-						ListEntry::Dir { name: _ } => Some(0),
-						ListEntry::File { size, name: _ } => Some(size),
+					.map(|e| match e {
+						ListEntry::Dir { name: _ } => 0,
+						ListEntry::File { size, name: _ } => size,
 					})
 					.sum();
 				file_system.insert(path, size);

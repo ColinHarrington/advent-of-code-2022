@@ -10,7 +10,7 @@ use yaah::*;
 fn solve_part1(jet_pattern: &'static str) -> usize {
 	let mut chamber = Chamber::default();
 
-	let mut shapes = vec![Shape::MINUS, Shape::PLUS, Shape::L, Shape::I, Shape::BOX]
+	let mut shapes = vec![Shape::Minus, Shape::Plus, Shape::L, Shape::I, Shape::Box]
 		.into_iter()
 		.cycle();
 	let mut jet_cycle = jet_pattern.trim().chars().cycle();
@@ -25,7 +25,7 @@ fn solve_part1(jet_pattern: &'static str) -> usize {
 fn solve_part2(jet_pattern: &'static str) -> u64 {
 	let mut chamber = Chamber::default();
 
-	let mut shapes = vec![Shape::MINUS, Shape::PLUS, Shape::L, Shape::I, Shape::BOX]
+	let mut shapes = vec![Shape::Minus, Shape::Plus, Shape::L, Shape::I, Shape::Box]
 		.into_iter()
 		.cycle();
 	let mut jet_cycle = jet_pattern.trim().chars().cycle();
@@ -75,7 +75,7 @@ fn solve_part2(jet_pattern: &'static str) -> u64 {
 	cycles * pattern_height + init_height + extra_height
 }
 
-fn match_distance(matches: &Vec<usize>) -> Option<usize> {
+fn match_distance(matches: &[usize]) -> Option<usize> {
 	let distances: Vec<usize> = matches
 		.iter()
 		.tuple_windows()
@@ -266,11 +266,11 @@ impl Chamber {
 
 #[derive(Clone)]
 enum Shape {
-	MINUS,
-	PLUS,
+	Minus,
+	Plus,
 	L,
 	I,
-	BOX,
+	Box,
 }
 
 impl Shape {
@@ -280,11 +280,11 @@ impl Shape {
 
 	fn sprite(&self) -> Vec<Vec<char>> {
 		match self {
-			Shape::MINUS => vec!["####"],
-			Shape::PLUS => vec![".#.", "###", ".#."],
+			Shape::Minus => vec!["####"],
+			Shape::Plus => vec![".#.", "###", ".#."],
 			Shape::L => vec!["..#", "..#", "###"],
 			Shape::I => vec!["#", "#", "#", "#"],
-			Shape::BOX => vec!["##", "##"],
+			Shape::Box => vec!["##", "##"],
 		}
 		.into_iter()
 		.map(|s| s.chars().collect())

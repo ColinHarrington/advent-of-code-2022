@@ -18,7 +18,7 @@ fn generate_structures(input: &'static str) -> Vec<RockStructure> {
 }
 
 #[aoc(day14, part1)]
-fn solve_part1(structures: &Vec<RockStructure>) -> u32 {
+fn solve_part1(structures: &[RockStructure]) -> u32 {
 	let mut cave = Cave::from_structures(structures, false);
 
 	while let Some(grain) = cave.drop_grain() {
@@ -29,7 +29,7 @@ fn solve_part1(structures: &Vec<RockStructure>) -> u32 {
 }
 
 #[aoc(day14, part2)]
-fn solve_part2(structures: &Vec<RockStructure>) -> u32 {
+fn solve_part2(structures: &[RockStructure]) -> u32 {
 	let mut cave = Cave::from_structures(structures, true);
 
 	while cave.is_open(500, 0) {
@@ -74,7 +74,7 @@ pub struct Cave {
 }
 
 impl Cave {
-	fn from_structures(structures: &Vec<RockStructure>, has_floor: bool) -> Self {
+	fn from_structures(structures: &[RockStructure], has_floor: bool) -> Self {
 		let rocks = structures
 			.iter()
 			.flat_map(map_rocks)

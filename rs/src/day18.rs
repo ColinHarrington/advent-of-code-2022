@@ -15,7 +15,7 @@ fn read_cubes(input: &'static str) -> Vec<Cube> {
 }
 
 #[aoc(day18, part1)]
-fn solve_part1(cubes: &Vec<Cube>) -> usize {
+fn solve_part1(cubes: &[Cube]) -> usize {
 	let cube_set: HashSet<Cube> = HashSet::from_iter(cubes.iter().copied());
 	cube_set
 		.iter()
@@ -29,7 +29,7 @@ fn solve_part1(cubes: &Vec<Cube>) -> usize {
 }
 
 #[aoc(day18, part2)]
-fn solve_part2(cubes: &Vec<Cube>) -> usize {
+fn solve_part2(cubes: &[Cube]) -> usize {
 	let cube_set: HashSet<Cube> = HashSet::from_iter(cubes.iter().copied());
 
 	let (lower, upper) = bounds(&cube_set);

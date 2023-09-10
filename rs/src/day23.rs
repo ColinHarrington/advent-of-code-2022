@@ -22,10 +22,10 @@ fn elf_map(input: &'static str) -> Vec<Elf> {
 }
 
 #[aoc(day23, part1)]
-fn solve_part1(elves: &Vec<Elf>) -> i32 {
+fn solve_part1(elves: &[Elf]) -> i32 {
 	let rounds = 10;
 	let mut grove = Grove {
-		field: HashSet::from_iter(elves.clone().into_iter()),
+		field: HashSet::from_iter(elves.iter().cloned()),
 	};
 
 	let mut directions: VecDeque<Direction> = [
@@ -49,9 +49,9 @@ fn solve_part1(elves: &Vec<Elf>) -> i32 {
 }
 
 #[aoc(day23, part2)]
-fn solve_part2(elves: &Vec<Elf>) -> i32 {
+fn solve_part2(elves: &[Elf]) -> i32 {
 	let mut grove = Grove {
-		field: HashSet::from_iter(elves.clone().into_iter()),
+		field: HashSet::from_iter(elves.iter().cloned()),
 	};
 
 	let mut directions: VecDeque<Direction> = [

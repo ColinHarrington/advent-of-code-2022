@@ -91,7 +91,7 @@ fn read_fuel_requirements(input: &'static str) -> Vec<Snafu> {
 }
 
 #[aoc(day25, part1)]
-fn solve_part1(fuel_requirements: &Vec<Snafu>) -> String {
+fn solve_part1(fuel_requirements: &[Snafu]) -> String {
 	Snafu::from(
 		fuel_requirements
 			.iter()

@@ -23,7 +23,7 @@ fn generate_packet_list(input: &'static str) -> Vec<PacketData> {
 }
 
 #[aoc(day13, part1)]
-fn solve_part1(pairs: &Vec<PacketPair>) -> u32 {
+fn solve_part1(pairs: &[PacketPair]) -> u32 {
 	pairs
 		.iter()
 		.enumerate()
@@ -34,7 +34,7 @@ fn solve_part1(pairs: &Vec<PacketPair>) -> u32 {
 }
 
 #[aoc(day13, part2)]
-fn solve_part2(input: &Vec<PacketData>) -> u32 {
+fn solve_part2(input: &[PacketData]) -> u32 {
 	let dividers = vec![packet("[[2]]").unwrap().1, packet("[[6]]").unwrap().1];
 
 	let mut packets: Vec<PacketData> = input

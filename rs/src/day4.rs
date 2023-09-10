@@ -7,24 +7,24 @@ fn gen(input: &'static str) -> Vec<String> {
 }
 
 #[aoc(day4, part1)]
-fn solve_part1(stringy_pairs: &Vec<String>) -> usize {
+fn solve_part1(stringy_pairs: &[String]) -> usize {
 	stringy_pairs
 		.iter()
-		.map(assignment_pair)
+		.map(|s| assignment_pair(s.as_str()))
 		.filter(|(l, r)| fully_contains(l.clone(), r.clone()))
 		.count()
 }
 
 #[aoc(day4, part2)]
-fn solve_part2(stringy_pairs: &Vec<String>) -> usize {
+fn solve_part2(stringy_pairs: &[String]) -> usize {
 	stringy_pairs
 		.iter()
-		.map(assignment_pair)
+		.map(|s| assignment_pair(s.as_str()))
 		.filter(|(l, r)| overlap_at_all(l.clone(), r.clone()))
 		.count()
 }
 
-fn assignment_pair(s: &String) -> (RangeInclusive<u32>, RangeInclusive<u32>) {
+fn assignment_pair(s: &str) -> (RangeInclusive<u32>, RangeInclusive<u32>) {
 	let pair: Vec<RangeInclusive<u32>> = s
 		.split(',')
 		.map(|s| s.to_string())

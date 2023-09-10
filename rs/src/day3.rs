@@ -6,7 +6,7 @@ fn gen(input: &'static str) -> Vec<Rucksack> {
 }
 
 #[aoc(day3, part1)]
-fn solve_part1(rucksacks: &Vec<Rucksack>) -> i32 {
+fn solve_part1(rucksacks: &[Rucksack]) -> i32 {
 	rucksacks
 		.iter()
 		.map(|rs| rs.shared_item())
@@ -23,7 +23,7 @@ fn gen_two(input: &'static str) -> Vec<String> {
 }
 
 #[aoc(day3, part2)]
-fn solve_part2(lines: &Vec<String>) -> i32 {
+fn solve_part2(lines: &[String]) -> i32 {
 	lines
 		.chunks(3)
 		.map(|c| c.to_vec())
@@ -71,7 +71,7 @@ pub fn common_item(group: Vec<String>) -> char {
 		.unwrap()
 }
 
-pub fn shared_item(s1: &String, s2: &String) -> char {
+pub fn shared_item(s1: &str, s2: &str) -> char {
 	s1.chars().find(|c| s2.contains(*c)).unwrap()
 }
 
