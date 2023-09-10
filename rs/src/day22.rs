@@ -325,23 +325,6 @@ mod test {
 		]
 	}
 
-	///
-	/**
-		```
-		>>v#
-		.#v.
-		#.v.
-		..v.
-	...#...v..v#
-	>>>v...>#.>>
-	..#v...#....
-	...>>>>v..#.
-			...#....
-			.....#..
-			.#......
-			......#.
-	```
-	 */
 	#[test]
 	fn example_steps() {
 		let (board, instructions) = read_monkey_map(EXAMPLE);

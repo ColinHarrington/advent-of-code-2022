@@ -44,10 +44,10 @@ impl Computer {
 				let lhs = self.eval(left);
 				let rhs = self.eval(right);
 				match op {
-					MathOp::ADD => lhs.add(rhs),
-					MathOp::SUBTRACT => lhs.sub(rhs),
-					MathOp::MULTIPLY => lhs.mul(rhs),
-					MathOp::DIVIDE => lhs.div(rhs),
+					MathOp::Add => lhs.add(rhs),
+					MathOp::Subtract => lhs.sub(rhs),
+					MathOp::Multiply => lhs.mul(rhs),
+					MathOp::Divide => lhs.div(rhs),
 				}
 			}
 			Expression::Variable(_) => panic!("cannot eval a variable"),
@@ -62,16 +62,16 @@ impl Computer {
 				match (self.contains_variable(lhs), self.contains_variable(rhs)) {
 					(false, false) => self.eval(symbol),
 					(true, false) => match op {
-						MathOp::ADD => self.uneval(lhs, other.sub(self.eval(rhs))), // humn + x = var => humn = var - x
-						MathOp::SUBTRACT => self.uneval(lhs, other.add(self.eval(rhs))), // humn - x = var => humn = var + x,
-						MathOp::MULTIPLY => self.uneval(lhs, other.div(self.eval(rhs))), // humn * x = var => humn = var / x
-						MathOp::DIVIDE => self.uneval(lhs, other.mul(self.eval(rhs))),   // humn / x = var => humn = var * x
+						MathOp::Add => self.uneval(lhs, other.sub(self.eval(rhs))), // humn + x = var => humn = var - x
+						MathOp::Subtract => self.uneval(lhs, other.add(self.eval(rhs))), // humn - x = var => humn = var + x,
+						MathOp::Multiply => self.uneval(lhs, other.div(self.eval(rhs))), // humn * x = var => humn = var / x
+						MathOp::Divide => self.uneval(lhs, other.mul(self.eval(rhs))),   // humn / x = var => humn = var * x
 					},
 					(false, true) => match op {
-						MathOp::ADD => self.uneval(rhs, other.sub(self.eval(lhs))), // x + humn = var => humn = var - x
-						MathOp::SUBTRACT => self.uneval(rhs, self.eval(lhs).sub(other)), // x - humn = var => humn = x - var,
-						MathOp::MULTIPLY => self.uneval(rhs, other.div(self.eval(lhs))), // x * humn = var => humn = var / x
-						MathOp::DIVIDE => self.uneval(rhs, other.div(self.eval(lhs))),   // x / humn = var => humn = var / x
+						MathOp::Add => self.uneval(rhs, other.sub(self.eval(lhs))), // x + humn = var => humn = var - x
+						MathOp::Subtract => self.uneval(rhs, self.eval(lhs).sub(other)), // x - humn = var => humn = x - var,
+						MathOp::Multiply => self.uneval(rhs, other.div(self.eval(lhs))), // x * humn = var => humn = var / x
+						MathOp::Divide => self.uneval(rhs, other.div(self.eval(lhs))),   // x / humn = var => humn = var / x
 					},
 					(true, true) => panic!("Sorry Dave"),
 				}
@@ -129,19 +129,19 @@ pub enum Expression {
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum MathOp {
-	ADD,
-	SUBTRACT,
-	MULTIPLY,
-	DIVIDE,
+	Add,
+	Subtract,
+	Multiply,
+	Divide,
 }
 
 impl From<char> for MathOp {
 	fn from(value: char) -> Self {
 		match value {
-			'+' => MathOp::ADD,
-			'-' => MathOp::SUBTRACT,
-			'*' => MathOp::MULTIPLY,
-			'/' => MathOp::DIVIDE,
+			'+' => MathOp::Add,
+			'-' => MathOp::Subtract,
+			'*' => MathOp::Multiply,
+			'/' => MathOp::Divide,
 			_ => panic!(),
 		}
 	}
@@ -191,7 +191,7 @@ fn symbol(input: &str) -> IResult<&str, Symbol> {
 #[cfg(test)]
 mod test {
 	use crate::day21::Expression::{Binary, Value};
-	use crate::day21::MathOp::{ADD, DIVIDE, MULTIPLY, SUBTRACT};
+	use crate::day21::MathOp::{Add, Divide, Multiply, Subtract};
 	use crate::day21::{
 		binary_expression, monkey, read_monkeys, solve_part1, solve_part2, symbol, Expression,
 		MathOp, Monkey,
@@ -242,7 +242,7 @@ hmdt: 32";
 
 	#[test]
 	fn parse_binary_expression() {
-		let expected = Expression::Binary(['s', 'l', 'l', 'z'], MathOp::ADD, ['l', 'g', 'v', 'd']);
+		let expected = Expression::Binary(['s', 'l', 'l', 'z'], MathOp::Add, ['l', 'g', 'v', 'd']);
 		assert_eq!(Ok(("", expected)), binary_expression("sllz + lgvd"));
 	}
 
@@ -251,7 +251,7 @@ hmdt: 32";
 		let expected: Vec<Monkey> = vec![
 			Monkey {
 				symbol: ['r', 'o', 'o', 't'],
-				expression: Binary(['p', 'p', 'p', 'w'], ADD, ['s', 'j', 'm', 'n']),
+				expression: Binary(['p', 'p', 'p', 'w'], Add, ['s', 'j', 'm', 'n']),
 			},
 			Monkey {
 				symbol: ['d', 'b', 'p', 'l'],
@@ -259,7 +259,7 @@ hmdt: 32";
 			},
 			Monkey {
 				symbol: ['c', 'c', 'z', 'h'],
-				expression: Binary(['s', 'l', 'l', 'z'], ADD, ['l', 'g', 'v', 'd']),
+				expression: Binary(['s', 'l', 'l', 'z'], Add, ['l', 'g', 'v', 'd']),
 			},
 			Monkey {
 				symbol: ['z', 'c', 'z', 'c'],
@@ -267,7 +267,7 @@ hmdt: 32";
 			},
 			Monkey {
 				symbol: ['p', 't', 'd', 'q'],
-				expression: Binary(['h', 'u', 'm', 'n'], SUBTRACT, ['d', 'v', 'p', 't']),
+				expression: Binary(['h', 'u', 'm', 'n'], Subtract, ['d', 'v', 'p', 't']),
 			},
 			Monkey {
 				symbol: ['d', 'v', 'p', 't'],
@@ -287,7 +287,7 @@ hmdt: 32";
 			},
 			Monkey {
 				symbol: ['s', 'j', 'm', 'n'],
-				expression: Binary(['d', 'r', 'z', 'm'], MULTIPLY, ['d', 'b', 'p', 'l']),
+				expression: Binary(['d', 'r', 'z', 'm'], Multiply, ['d', 'b', 'p', 'l']),
 			},
 			Monkey {
 				symbol: ['s', 'l', 'l', 'z'],
@@ -295,15 +295,15 @@ hmdt: 32";
 			},
 			Monkey {
 				symbol: ['p', 'p', 'p', 'w'],
-				expression: Binary(['c', 'c', 'z', 'h'], DIVIDE, ['l', 'f', 'q', 'f']),
+				expression: Binary(['c', 'c', 'z', 'h'], Divide, ['l', 'f', 'q', 'f']),
 			},
 			Monkey {
 				symbol: ['l', 'g', 'v', 'd'],
-				expression: Binary(['l', 'j', 'g', 'n'], MULTIPLY, ['p', 't', 'd', 'q']),
+				expression: Binary(['l', 'j', 'g', 'n'], Multiply, ['p', 't', 'd', 'q']),
 			},
 			Monkey {
 				symbol: ['d', 'r', 'z', 'm'],
-				expression: Binary(['h', 'm', 'd', 't'], SUBTRACT, ['z', 'c', 'z', 'c']),
+				expression: Binary(['h', 'm', 'd', 't'], Subtract, ['z', 'c', 'z', 'c']),
 			},
 			Monkey {
 				symbol: ['h', 'm', 'd', 't'],

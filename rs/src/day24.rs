@@ -177,10 +177,10 @@ impl Basin {
 				.cartesian_product(0..width)
 				.map(|(row, column)| (row, column, valley[row][column]))
 				.filter_map(|(row, column, c)| match c {
-					'>' => Some(((row, column), Direction::RIGHT)),
-					'<' => Some(((row, column), Direction::LEFT)),
-					'^' => Some(((row, column), Direction::UP)),
-					'v' => Some(((row, column), Direction::DOWN)),
+					'>' => Some(((row, column), Direction::Right)),
+					'<' => Some(((row, column), Direction::Left)),
+					'^' => Some(((row, column), Direction::Up)),
+					'v' => Some(((row, column), Direction::Down)),
 					_ => None,
 				}),
 		);
@@ -212,10 +212,10 @@ impl Basin {
 		let mut valley = vec![vec!['.'; self.width]; self.height];
 		self.blizzards.iter().for_each(|(position, direction)| {
 			let (row, column) = match direction {
-				Direction::UP => self.move_up(time, *position),
-				Direction::DOWN => self.move_down(time, *position),
-				Direction::LEFT => self.move_left(time, *position),
-				Direction::RIGHT => self.move_right(time, *position),
+				Direction::Up => self.move_up(time, *position),
+				Direction::Down => self.move_down(time, *position),
+				Direction::Left => self.move_left(time, *position),
+				Direction::Right => self.move_right(time, *position),
 			};
 			valley[row][column] = match valley[row][column] {
 				'.' => direction.to_char(),
@@ -247,19 +247,19 @@ impl Basin {
 
 #[derive(Debug)]
 enum Direction {
-	UP,
-	DOWN,
-	LEFT,
-	RIGHT,
+	Up,
+	Down,
+	Left,
+	Right,
 }
 
 impl Direction {
 	fn to_char(&self) -> char {
 		match self {
-			Direction::UP => '^',
-			Direction::DOWN => 'v',
-			Direction::LEFT => '<',
-			Direction::RIGHT => '>',
+			Direction::Up => '^',
+			Direction::Down => 'v',
+			Direction::Left => '<',
+			Direction::Right => '>',
 		}
 	}
 }
@@ -269,10 +269,10 @@ impl TryFrom<char> for Direction {
 
 	fn try_from(value: char) -> Result<Self, Self::Error> {
 		match value {
-			'^' => Ok(Direction::UP),
-			'v' => Ok(Direction::DOWN),
-			'<' => Ok(Direction::LEFT),
-			'>' => Ok(Direction::RIGHT),
+			'^' => Ok(Direction::Up),
+			'v' => Ok(Direction::Down),
+			'<' => Ok(Direction::Left),
+			'>' => Ok(Direction::Right),
 			_ => Err(()),
 		}
 	}
