@@ -20,7 +20,12 @@ jobs:
         run: |
           rustup update
           rustup component add clippy
-          cargo install cargo-nextest --locked          
+
+      - name: Install cargo-nextest
+        uses: baptiste0928/cargo-install@v1
+        with:
+          crate: cargo-nextest
+          locked: true
 
       - name: Toolchain info
         run: |
