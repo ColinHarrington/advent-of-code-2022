@@ -239,7 +239,7 @@ impl Basin {
 				'.' => Some((row as i32, column as i32)),
 				_ => None,
 			})
-			.chain(entrances.into_iter())
+			.chain(entrances)
 			.map(|(row, column)| (time, row, column))
 			.collect()
 	}

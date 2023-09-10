@@ -36,7 +36,7 @@ fn solve_part2(trees: &TreeRows) -> u32 {
 }
 
 fn scenic_score(x: usize, y: usize, trees: &TreeRows, treehouse: char) -> u32 {
-	vec![
+	[
 		up(x, y, trees),
 		down(x, y, trees),
 		left(x, y, trees),
