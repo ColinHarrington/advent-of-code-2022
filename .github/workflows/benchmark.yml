@@ -36,5 +36,4 @@ jobs:
           auto-push: false
 
       - name: Push benchmark result
-        uses: actions/checkout@v3
         run: git push gh-pages:gh-pages
