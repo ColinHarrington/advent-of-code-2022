@@ -257,7 +257,10 @@ impl Chamber {
 			.filter_map(|window| self.cyclic_pattern(window))
 			.map(|(init, pattern_size)| init..(init + pattern_size))
 			.map(|range| &self.grid[range])
-			.find_map(|pattern| self.cyclic_pattern(pattern).map(|(init, dist)| (init as u64, dist as u64)))
+			.find_map(|pattern| {
+				self.cyclic_pattern(pattern)
+					.map(|(init, dist)| (init as u64, dist as u64))
+			})
 	}
 }
 

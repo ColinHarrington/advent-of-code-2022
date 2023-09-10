@@ -137,13 +137,14 @@ impl Board {
 	}
 
 	fn tile(&self, position: &Position) -> Tile {
-		(*self.map
+		(*self
+			.map
 			.get(position.row)
 			.unwrap()
 			.get(position.column)
 			.unwrap_or(&' '))
-			.try_into()
-			.unwrap()
+		.try_into()
+		.unwrap()
 	}
 }
 

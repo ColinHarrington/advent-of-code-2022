@@ -50,15 +50,13 @@ fn distance_map(
 fn build_full_distance_map(valves: Vec<Valve>) -> HashMap<(ValveLabel, ValveLabel), u32> {
 	let valve_map: HashMap<ValveLabel, Valve> =
 		HashMap::from_iter(valves.into_iter().map(|valve| (valve.name, valve.clone())));
-	let edges = valve_map
-		.iter()
-		.flat_map(|(name, valve)| {
-			valve
-				.tunnels
-				.iter()
-				.filter_map(|tunnel| valve_map.get(tunnel))
-				.map(|other| (*name, other.name))
-		});
+	let edges = valve_map.iter().flat_map(|(name, valve)| {
+		valve
+			.tunnels
+			.iter()
+			.filter_map(|tunnel| valve_map.get(tunnel))
+			.map(|other| (*name, other.name))
+	});
 	let graph: UnGraphMap<ValveLabel, u32> = UnGraphMap::from_edges(edges);
 
 	floyd_warshall(&graph, |_| 1u32).unwrap()

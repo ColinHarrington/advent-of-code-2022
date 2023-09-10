@@ -97,9 +97,7 @@ fn walk(
 ///
 /// The next step is create a graph of open positions, connecting nodes to their possible next moves.
 fn build_graph(basin: &Basin) -> DiGraphMap<PositionT, ()> {
-	let valley_sprite: Vec<Valley> = (0..(basin.lcm))
-		.map(|time| basin.valley_at(time))
-		.collect();
+	let valley_sprite: Vec<Valley> = (0..(basin.lcm)).map(|time| basin.valley_at(time)).collect();
 
 	let open_positons: HashSet<PositionT> = HashSet::from_iter(
 		valley_sprite
