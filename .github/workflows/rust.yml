@@ -20,6 +20,7 @@ jobs:
         run: |
           rustup update
           rustup component add clippy
+          cargo install cargo-nextest --locked          
 
       - name: Toolchain info
         run: |
@@ -38,5 +39,13 @@ jobs:
         working-directory: rs
 
       - name: Run tests
-        run: cargo test --verbose --release
+        run: cargo nextest run --profile ci
         working-directory: rs
+
+      - name: Test Report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()    # run this step even if previous step failed
+        with:
+          name: cargo-nextest
+          path: rs/target/nextest/ci/junit.xml
+          reporter: java-junit
