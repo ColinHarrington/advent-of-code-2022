@@ -1,11 +1,11 @@
-use std::ops::RangeInclusive;
 use itertools::Itertools;
 use nom::bytes::complete::tag;
 use nom::character::complete::{i32 as nom_i32, line_ending};
-use nom::IResult;
 use nom::multi::separated_list1;
-use nom::Parser;
 use nom::sequence::{preceded, separated_pair};
+use nom::IResult;
+use nom::Parser;
+use std::ops::RangeInclusive;
 use yaah::*;
 
 #[aoc_generator(day15)]
@@ -28,22 +28,30 @@ fn tuning_frequency(location: Location) -> i64 {
 }
 
 fn find_distress_signal(rows: RangeInclusive<i32>, sensors: &Vec<Sensor>) -> i64 {
-    let beacon = rows.clone().into_iter()
-        .find_map(|row| sensors.iter()
-            .filter_map(|sensor| sensor.range_at(row)) //Sensors in range of row
-            .sorted_by(|left, right| left.start().cmp(right.start()))
-            .fold(vec![], fold_ranges)
-            .into_iter()
-            .find_map(|range| match (range.contains(rows.start()), range.contains(rows.end())) {
-                (true, false) => Some(Location(range.end() + 1, row)),
-                _ => None,
-            })).unwrap();
+    let beacon = rows
+        .clone()
+        .into_iter()
+        .find_map(|row| {
+            sensors
+                .iter()
+                .filter_map(|sensor| sensor.range_at(row)) //Sensors in range of row
+                .sorted_by(|left, right| left.start().cmp(right.start()))
+                .fold(vec![], fold_ranges)
+                .into_iter()
+                .find_map(|range| {
+                    match (range.contains(rows.start()), range.contains(rows.end())) {
+                        (true, false) => Some(Location(range.end() + 1, row)),
+                        _ => None,
+                    }
+                })
+        })
+        .unwrap();
     tuning_frequency(beacon)
 }
 
-
 fn row_coverage(row: i32, sensors: &Vec<Sensor>) -> u32 {
-    sensors.iter()
+    sensors
+        .iter()
         .filter_map(|sensor| sensor.range_at(row))
         .sorted_by(|left, right| left.start().cmp(right.start()))
         .fold(vec![], fold_ranges)
@@ -52,23 +60,26 @@ fn row_coverage(row: i32, sensors: &Vec<Sensor>) -> u32 {
         .sum::<u32>()
 }
 
-fn fold_ranges(mut ranges: Vec<RangeInclusive<i32>>, range: RangeInclusive<i32>) -> Vec<RangeInclusive<i32>> {
+fn fold_ranges(
+    mut ranges: Vec<RangeInclusive<i32>>,
+    range: RangeInclusive<i32>,
+) -> Vec<RangeInclusive<i32>> {
     match ranges.pop() {
         None => ranges.push(range),
-        Some(prev) => ranges.extend(merge_range(prev, range))
+        Some(prev) => ranges.extend(merge_range(prev, range)),
     }
     ranges
 }
 
 fn merge_range(left: RangeInclusive<i32>, right: RangeInclusive<i32>) -> Vec<RangeInclusive<i32>> {
     match (left.contains(right.start()), left.contains(right.end())) {
-        (true, true) => vec![left.clone()],//Complete overlap
+        (true, true) => vec![left.clone()], //Complete overlap
         (true, false) => vec![RangeInclusive::new(*left.start(), *right.end())], //Extended right
         (false, true) => vec![RangeInclusive::new(*right.start(), *left.end())], //Extend left
         (false, false) => match *right.start() == left.end() + 1 {
             true => vec![RangeInclusive::new(*left.start(), *right.end())],
             false => vec![left.clone(), right.clone()],
-        }
+        },
     }
 }
 
@@ -119,8 +130,8 @@ fn sensor(input: &str) -> IResult<&str, Sensor> {
         tag(": closest beacon is at "),
         location,
     )
-        .map(|(at, beacon)| Sensor::new(at, beacon))
-        .parse(input)
+    .map(|(at, beacon)| Sensor::new(at, beacon))
+    .parse(input)
 }
 
 fn location(input: &str) -> IResult<&str, Location> {
@@ -128,12 +139,17 @@ fn location(input: &str) -> IResult<&str, Location> {
         preceded(tag("x="), nom_i32),
         tag(", "),
         preceded(tag("y="), nom_i32),
-    ).map(|(x, y)| Location(x, y)).parse(input)
+    )
+    .map(|(x, y)| Location(x, y))
+    .parse(input)
 }
 
 #[cfg(test)]
 mod test {
-    use crate::day15::{find_distress_signal, fold_ranges, gen_sensors, Location, location, merge_range, row_coverage, Sensor, sensor};
+    use crate::day15::{
+        find_distress_signal, fold_ranges, gen_sensors, location, merge_range, row_coverage,
+        sensor, Location, Sensor,
+    };
 
     const EXAMPLE: &str = r"Sensor at x=2, y=18: closest beacon is at x=-2, y=15
 Sensor at x=9, y=16: closest beacon is at x=10, y=16
@@ -181,11 +197,15 @@ Sensor at x=20, y=1: closest beacon is at x=15, y=3";
 
         assert_eq!(14, sensors.len());
 
-        assert_eq!(*sensors.first().unwrap(),
-                   Sensor::new(Location(2, 18), Location(-2, 15)));
+        assert_eq!(
+            *sensors.first().unwrap(),
+            Sensor::new(Location(2, 18), Location(-2, 15))
+        );
 
-        assert_eq!(*sensors.last().unwrap(),
-                   Sensor::new(Location(20, 1), Location(15, 3)));
+        assert_eq!(
+            *sensors.last().unwrap(),
+            Sensor::new(Location(20, 1), Location(15, 3))
+        );
     }
 
     #[test]
@@ -215,30 +235,26 @@ Sensor at x=20, y=1: closest beacon is at x=15, y=3";
 
     #[test]
     fn test_merge_ranges() {
-        let example1 = vec![
-            -2..=2,
-            2..=14,
-            2..=2,
-            12..=12,
-            14..=18,
-            16..=24,
-        ];
+        let example1 = vec![-2..=2, 2..=14, 2..=2, 12..=12, 14..=18, 16..=24];
 
-        assert_eq!(vec![-2..=24], example1.into_iter().fold(vec![], fold_ranges));
+        assert_eq!(
+            vec![-2..=24],
+            example1.into_iter().fold(vec![], fold_ranges)
+        );
 
-        let example2 = vec![
-            -2..=2,
-            2..=2,
-            12..=12,
-            14..=18,
-            16..=24,
-        ];
+        let example2 = vec![-2..=2, 2..=2, 12..=12, 14..=18, 16..=24];
 
-        assert_eq!(vec![-2..=2, 12..=12, 14..=24], example2.into_iter().fold(vec![], fold_ranges));
+        assert_eq!(
+            vec![-2..=2, 12..=12, 14..=24],
+            example2.into_iter().fold(vec![], fold_ranges)
+        );
     }
 
     #[test]
     fn part2_example() {
-        assert_eq!(56000011, find_distress_signal(0..=20, &gen_sensors(EXAMPLE)));
+        assert_eq!(
+            56000011,
+            find_distress_signal(0..=20, &gen_sensors(EXAMPLE))
+        );
     }
 }

@@ -1,8 +1,8 @@
-use std::collections::HashSet;
 use nom::character::complete::{char, line_ending, one_of, u8 as nom_u8};
-use nom::IResult;
 use nom::multi::separated_list1;
 use nom::sequence::separated_pair;
+use nom::IResult;
+use std::collections::HashSet;
 use yaah::*;
 
 #[aoc_generator(day9)]
@@ -44,7 +44,6 @@ fn solve_part2(motions: &Vec<Motion>) -> u32 {
     rope.print_history();
     rope.history.len() as u32
 }
-
 
 #[derive(Debug, PartialEq)]
 pub enum Motion {
@@ -109,27 +108,32 @@ impl Rope {
         let tail = self.knots.last().unwrap();
 
         println!("=== H{:?} T{:?} ===", head, tail);
-        let lines: Vec<String> = (-5..18).into_iter()
-            .map(|y| (-11..15).into_iter()
-                .map(|x| match (x, y) {
-                    (x, y) if self.knots.contains(&(x, y)) => match self.knots.iter()
-                        .enumerate()
-                        .find_map(|(i, knot)| match (x, y) == *knot {
-                            true => Some(i),
-                            false => None
-                        }) {
-                        Some(i) => match i {
-                            0 => 'H',
-                            n if n == self.knots.len()-1 => 'T',
-                            _ => (i).to_string().chars().next().unwrap()
+        let lines: Vec<String> = (-5..18)
+            .into_iter()
+            .map(|y| {
+                (-11..15)
+                    .into_iter()
+                    .map(|x| match (x, y) {
+                        (x, y) if self.knots.contains(&(x, y)) => {
+                            match self.knots.iter().enumerate().find_map(|(i, knot)| {
+                                match (x, y) == *knot {
+                                    true => Some(i),
+                                    false => None,
+                                }
+                            }) {
+                                Some(i) => match i {
+                                    0 => 'H',
+                                    n if n == self.knots.len() - 1 => 'T',
+                                    _ => (i).to_string().chars().next().unwrap(),
+                                },
+                                None => ' ',
+                            }
                         }
-                        None => ' '
-                    },
-                    (0, 0) => 's',
-                    _ => '.'
-                })
-                .collect::<String>()
-            )
+                        (0, 0) => 's',
+                        _ => '.',
+                    })
+                    .collect::<String>()
+            })
             .rev()
             .collect();
 
@@ -141,27 +145,26 @@ impl Rope {
 
     #[cfg(feature = "debug")]
     fn print_history(&self) {
-        let xs: Vec<i32> = self.history.iter()
-            .map(|p| p.0)
-            .collect();
+        let xs: Vec<i32> = self.history.iter().map(|p| p.0).collect();
         let xmin = *xs.iter().min().unwrap() - 1;
         let xmax = *xs.iter().max().unwrap() + 2;
 
-        let ys: Vec<i32> = self.history.iter()
-            .map(|p| p.1)
-            .collect();
+        let ys: Vec<i32> = self.history.iter().map(|p| p.1).collect();
         let ymin = *ys.iter().min().unwrap() - 1;
         let ymax = *ys.iter().max().unwrap() + 2;
 
-        (ymin..ymax).into_iter()
-            .map(|y| (xmin..xmax).into_iter()
-                .map(|x| match (x, y) {
-                    (0, 0) => 's',
-                    (x, y) if self.history.contains(&(x, y)) => '#',
-                    _ => '.'
-                })
-                .collect::<String>()
-            )
+        (ymin..ymax)
+            .into_iter()
+            .map(|y| {
+                (xmin..xmax)
+                    .into_iter()
+                    .map(|x| match (x, y) {
+                        (0, 0) => 's',
+                        (x, y) if self.history.contains(&(x, y)) => '#',
+                        _ => '.',
+                    })
+                    .collect::<String>()
+            })
             .rev()
             .for_each(|line| println!("{line}"))
     }
@@ -170,7 +173,7 @@ impl Rope {
 fn tail_move(head: Position, tail: Position) -> Option<Position> {
     match tail_movement(head, tail) {
         Some(position) => Some(translate(tail, position)),
-        None => None
+        None => None,
     }
 }
 
@@ -180,7 +183,7 @@ fn tail_movement(head: Position, tail: Position) -> Option<Position> {
         (x, y) if x <= 1 && y <= 1 => None,
         (1, 2) => Some((diff.0, diff.1 / 2)),
         (2, 1) => Some((diff.0 / 2, diff.1)),
-        _ => Some((diff.0 / 2, diff.1 / 2))
+        _ => Some((diff.0 / 2, diff.1 / 2)),
     }
 }
 
@@ -201,7 +204,6 @@ fn translation_step(motion: &Motion) -> Position {
     }
 }
 
-
 fn parse_motions(input: &str) -> IResult<&str, Vec<Motion>> {
     Ok(separated_list1(line_ending, parse_motion)(input)?)
 }
@@ -216,10 +218,9 @@ fn parse_motion(input: &str) -> IResult<&str, Motion> {
     }
 }
 
-
 #[cfg(test)]
 mod test {
-    use crate::day9::{gen, Motion, parse_motion, parse_motions, solve_part1, solve_part2};
+    use crate::day9::{gen, parse_motion, parse_motions, solve_part1, solve_part2, Motion};
 
     const EXAMPLE: &str = r"R 4
 U 4

@@ -1,11 +1,11 @@
-use std::cmp::Ordering;
-use std::fmt;
 use itertools::Itertools;
 use nom::branch::alt;
 use nom::character::complete::{char as nom_char, line_ending, u32 as nom_u32};
-use nom::IResult;
 use nom::multi::{many1, separated_list0, separated_list1};
 use nom::sequence::{preceded, separated_pair, terminated, tuple};
+use nom::IResult;
+use std::cmp::Ordering;
+use std::fmt;
 use yaah::*;
 
 type PacketPair = (PacketData, PacketData);
@@ -17,12 +17,16 @@ fn generate_packet_pairs(input: &'static str) -> Vec<PacketPair> {
 
 #[aoc_generator(day13, part2)]
 fn generate_packet_list(input: &'static str) -> Vec<PacketData> {
-    separated_list1(many1(line_ending), packet)(input).unwrap().1
+    separated_list1(many1(line_ending), packet)(input)
+        .unwrap()
+        .1
 }
 
 #[aoc(day13, part1)]
 fn solve_part1(pairs: &Vec<PacketPair>) -> u32 {
-    pairs.iter().enumerate()
+    pairs
+        .iter()
+        .enumerate()
         .map(|(idx, pair)| (1 + idx, pair))
         .filter(|(_, (packet1, packet2))| packet1.cmp(packet2) == Ordering::Less)
         .map(|(i, _)| i as u32)
@@ -31,19 +35,19 @@ fn solve_part1(pairs: &Vec<PacketPair>) -> u32 {
 
 #[aoc(day13, part2)]
 fn solve_part2(input: &Vec<PacketData>) -> u32 {
-    let dividers = vec![
-        packet("[[2]]").unwrap().1,
-        packet("[[6]]").unwrap().1,
-    ];
+    let dividers = vec![packet("[[2]]").unwrap().1, packet("[[6]]").unwrap().1];
 
-    let mut packets: Vec<PacketData> = input.iter()
+    let mut packets: Vec<PacketData> = input
+        .iter()
         .cloned()
         .chain(dividers.iter().cloned())
         .collect();
 
     packets.sort_by(|a, b| a.cmp(b));
 
-    packets.iter().enumerate()
+    packets
+        .iter()
+        .enumerate()
         .map(|(idx, packet)| (1 + idx, packet))
         .filter(|(_, packet)| dividers.contains(packet))
         .map(|(n, _)| n as u32)
@@ -51,15 +55,21 @@ fn solve_part2(input: &Vec<PacketData>) -> u32 {
 }
 
 fn packet_pairs(input: &str) -> IResult<&str, Vec<(PacketData, PacketData)>> {
-    let (input, packets) = separated_list1(tuple((line_ending, line_ending)),
-                                           separated_pair(packet, line_ending, packet))(input)?;
+    let (input, packets) = separated_list1(
+        tuple((line_ending, line_ending)),
+        separated_pair(packet, line_ending, packet),
+    )(input)?;
     Ok((input, packets))
 }
 
 fn packet(input: &str) -> IResult<&str, PacketData> {
-    let (input, data) = preceded(nom_char('['), terminated(
-        separated_list0(nom_char(','), alt((packet_data_value, packet))),
-        nom_char(']')))(input)?;
+    let (input, data) = preceded(
+        nom_char('['),
+        terminated(
+            separated_list0(nom_char(','), alt((packet_data_value, packet))),
+            nom_char(']'),
+        ),
+    )(input)?;
     Ok((input, PacketData::List(data)))
 }
 
@@ -78,7 +88,9 @@ impl fmt::Display for PacketData {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             PacketData::Value(value) => write!(f, "{}", value),
-            PacketData::List(list) => write!(f, "[{}]", list.iter().map(|d| format!("{}", d)).join(","))
+            PacketData::List(list) => {
+                write!(f, "[{}]", list.iter().map(|d| format!("{}", d)).join(","))
+            }
         }
     }
 }
@@ -89,7 +101,7 @@ impl PartialEq for PacketData {
             (Self::Value(left), Self::Value(right)) => left == right,
             (Self::Value(left), Self::List(right)) => vec![PacketData::Value(*left)] == *right,
             (Self::List(left), Self::Value(right)) => *left == vec![PacketData::Value(*right)],
-            (Self::List(left), Self::List(right)) => left == right
+            (Self::List(left), Self::List(right)) => left == right,
         }
     }
 }
@@ -100,16 +112,19 @@ impl Ord for PacketData {
             (Self::Value(left), Self::Value(right)) => left.cmp(right),
             (Self::Value(left), Self::List(right)) => vec![PacketData::Value(*left)].cmp(right),
             (Self::List(left), Self::Value(right)) => left.cmp(&vec![PacketData::Value(*right)]),
-            (Self::List(left), Self::List(right)) => left.cmp(right)
+            (Self::List(left), Self::List(right)) => left.cmp(right),
         }
     }
 }
 
 #[cfg(test)]
 mod test {
-    use std::cmp::Ordering;
+    use crate::day13::{
+        generate_packet_list, generate_packet_pairs, packet_data_value, packet_pairs, solve_part1,
+        solve_part2, PacketData,
+    };
     use itertools::Itertools;
-    use crate::day13::{generate_packet_list, generate_packet_pairs, packet_data_value, packet_pairs, PacketData, solve_part1, solve_part2};
+    use std::cmp::Ordering;
 
     const EXAMPLE: &str = r"[1,1,3,1,1]
 [1,1,5,1,1]

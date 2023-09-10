@@ -1,13 +1,16 @@
 use nom::character::complete::{i64 as nom_i64, line_ending};
-use nom::IResult;
 use nom::multi::separated_list1;
+use nom::IResult;
 use yaah::*;
 
 type Element = (usize, i64);
 
 #[aoc_generator(day20)]
 fn read_input(input: &'static str) -> Vec<Element> {
-    encryption_file(input).unwrap().1.iter()
+    encryption_file(input)
+        .unwrap()
+        .1
+        .iter()
         .enumerate()
         .map(|(i, &e)| (i, e))
         .collect()
@@ -15,7 +18,8 @@ fn read_input(input: &'static str) -> Vec<Element> {
 
 #[aoc(day20, part1)]
 fn solve_part1(file: &Vec<Element>) -> i64 {
-    let mixed = file.iter()
+    let mixed = file
+        .iter()
         .fold(file.clone(), make_move)
         .iter()
         .map(|e| e.1)
@@ -26,23 +30,20 @@ fn solve_part1(file: &Vec<Element>) -> i64 {
 #[aoc(day20, part2)]
 fn solve_part2(input: &Vec<Element>) -> i64 {
     let decryption_key: i64 = 811589153;
-    let file: Vec<Element> = input.iter()
+    let file: Vec<Element> = input
+        .iter()
         .map(|&(i, e)| (i, decryption_key * e))
         .collect();
     let mut elements = file.clone();
     for _ in 0..10 {
         elements = file.iter().fold(elements, make_move)
     }
-    let mixed = elements.iter()
-        .map(|e| e.1)
-        .collect();
+    let mixed = elements.iter().map(|e| e.1).collect();
     grove_coordinates(mixed)
 }
 
 fn make_move(mut elements: Vec<Element>, element: &Element) -> Vec<Element> {
-    let position = elements.iter()
-        .position(|e| e == element)
-        .unwrap();
+    let position = elements.iter().position(|e| e == element).unwrap();
     elements.remove(position);
     let new_position = (element.1 + (position as i64)).rem_euclid(elements.len() as i64);
     elements.insert(new_position as usize, *element);
@@ -53,7 +54,10 @@ fn make_move(mut elements: Vec<Element>, element: &Element) -> Vec<Element> {
 fn grove_coordinates(numbers: Vec<i64>) -> i64 {
     let start = numbers.iter().position(|&n| n == 0i64).unwrap();
     let size = numbers.len();
-    [1000, 2000, 3000].iter().map(|n| numbers[(start + n) % size]).sum()
+    [1000, 2000, 3000]
+        .iter()
+        .map(|n| numbers[(start + n) % size])
+        .sum()
 }
 
 fn encryption_file(input: &str) -> IResult<&str, Vec<i64>> {
@@ -62,7 +66,7 @@ fn encryption_file(input: &str) -> IResult<&str, Vec<i64>> {
 
 #[cfg(test)]
 mod test {
-    use crate::day20::{Element, grove_coordinates, read_input, solve_part1, solve_part2};
+    use crate::day20::{grove_coordinates, read_input, solve_part1, solve_part2, Element};
 
     const EXAMPLE: &str = "1
 2
@@ -74,7 +78,8 @@ mod test {
 
     #[test]
     fn parse_example_input() {
-        let expected: Vec<Element> = vec![1, 2, -3, 3, -2, 0, 4].iter()
+        let expected: Vec<Element> = vec![1, 2, -3, 3, -2, 0, 4]
+            .iter()
             .enumerate()
             .map(|(i, &e)| (i, e))
             .collect();

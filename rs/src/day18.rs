@@ -1,14 +1,13 @@
-use std::collections::{HashSet, VecDeque};
-use std::ops::{Add, Not, Sub};
 use itertools::Itertools;
-use nom::character::complete::{char as nom_char, line_ending};
-use nom::IResult;
 use nom::character::complete::i8 as nom_i8;
+use nom::character::complete::{char as nom_char, line_ending};
 use nom::combinator::map;
 use nom::multi::separated_list1;
 use nom::sequence::separated_pair;
+use nom::IResult;
+use std::collections::{HashSet, VecDeque};
+use std::ops::{Add, Not, Sub};
 use yaah::*;
-
 
 #[aoc_generator(day18)]
 fn read_cubes(input: &'static str) -> Vec<Cube> {
@@ -18,11 +17,14 @@ fn read_cubes(input: &'static str) -> Vec<Cube> {
 #[aoc(day18, part1)]
 fn solve_part1(cubes: &Vec<Cube>) -> usize {
     let cube_set: HashSet<Cube> = HashSet::from_iter(cubes.into_iter().map(|&cube| cube));
-    cube_set.iter()
-        .map(|cube| cube.adjacent()
-            .into_iter()
-            .filter(|other| cube_set.contains(other).not())
-            .count())
+    cube_set
+        .iter()
+        .map(|cube| {
+            cube.adjacent()
+                .into_iter()
+                .filter(|other| cube_set.contains(other).not())
+                .count()
+        })
         .sum()
 }
 
@@ -34,21 +36,49 @@ fn solve_part2(cubes: &Vec<Cube>) -> usize {
 
     let flood = fill(lower, upper, &cube_set);
 
-    cube_set.iter()
-        .map(|cube| cube.adjacent()
-            .into_iter()
-            .filter(|other| flood.contains(other))
-            .count())
+    cube_set
+        .iter()
+        .map(|cube| {
+            cube.adjacent()
+                .into_iter()
+                .filter(|other| flood.contains(other))
+                .count()
+        })
         .sum()
 }
 
 fn bounds(cubes: &HashSet<Cube>) -> (Cube, Cube) {
-    let (xmin, xmax) = cubes.iter().map(|cube| cube.x).minmax().into_option().unwrap();
-    let (ymin, ymax) = cubes.iter().map(|cube| cube.y).minmax().into_option().unwrap();
-    let (zmin, zmax) = cubes.iter().map(|cube| cube.z).minmax().into_option().unwrap();
+    let (xmin, xmax) = cubes
+        .iter()
+        .map(|cube| cube.x)
+        .minmax()
+        .into_option()
+        .unwrap();
+    let (ymin, ymax) = cubes
+        .iter()
+        .map(|cube| cube.y)
+        .minmax()
+        .into_option()
+        .unwrap();
+    let (zmin, zmax) = cubes
+        .iter()
+        .map(|cube| cube.z)
+        .minmax()
+        .into_option()
+        .unwrap();
 
-    (Cube { x: xmin.sub(1), y: ymin.sub(1), z: zmin.sub(1) },
-     Cube { x: xmax.add(1), y: ymax.add(1), z: zmax.add(1) })
+    (
+        Cube {
+            x: xmin.sub(1),
+            y: ymin.sub(1),
+            z: zmin.sub(1),
+        },
+        Cube {
+            x: xmax.add(1),
+            y: ymax.add(1),
+            z: zmax.add(1),
+        },
+    )
 }
 
 fn fill(min: Cube, max: Cube, cubes: &HashSet<Cube>) -> HashSet<Cube> {
@@ -56,7 +86,8 @@ fn fill(min: Cube, max: Cube, cubes: &HashSet<Cube>) -> HashSet<Cube> {
     let mut queue = VecDeque::from([min]);
 
     while let Some(cube) = queue.pop_front() {
-        let new_fill: Vec<Cube> = cube.adjacent()
+        let new_fill: Vec<Cube> = cube
+            .adjacent()
             .into_iter()
             .filter(|c| flood.contains(c).not())
             .filter(|c| c.in_bounds(&min, &max))
@@ -86,9 +117,10 @@ impl Cube {
             (0, -1, 0),
             (0, 0, 1),
             (0, 0, -1),
-        ].into_iter()
-            .map(|t| self.translate(t))
-            .collect()
+        ]
+        .into_iter()
+        .map(|t| self.translate(t))
+        .collect()
     }
 
     fn translate(&self, (xdiff, ydiff, zdiff): (i8, i8, i8)) -> Cube {
@@ -114,14 +146,19 @@ fn cubes(input: &str) -> IResult<&str, Vec<Cube>> {
 }
 
 fn cube(input: &str) -> IResult<&str, Cube> {
-    map(separated_pair(nom_i8, nom_char(','),
-                       separated_pair(nom_i8, nom_char(','), nom_i8)),
-        |(x, (y, z))| Cube { x, y, z })(input)
+    map(
+        separated_pair(
+            nom_i8,
+            nom_char(','),
+            separated_pair(nom_i8, nom_char(','), nom_i8),
+        ),
+        |(x, (y, z))| Cube { x, y, z },
+    )(input)
 }
 
 #[cfg(test)]
 mod test {
-    use crate::day18::{Cube, cube, cubes, read_cubes, solve_part1, solve_part2};
+    use crate::day18::{cube, cubes, read_cubes, solve_part1, solve_part2, Cube};
 
     const EXAMPLE: &str = r"2,2,2
 1,2,2

@@ -1,12 +1,12 @@
-use std::borrow::Cow;
-use std::collections::HashMap;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete;
 use nom::character::complete::{alphanumeric1, line_ending, multispace1, newline, not_line_ending};
-use nom::IResult;
 use nom::multi::separated_list1;
 use nom::sequence::{preceded, tuple};
+use nom::IResult;
+use std::borrow::Cow;
+use std::collections::HashMap;
 use yaah::*;
 
 type FileSystem = HashMap<String, u32>;
@@ -44,19 +44,20 @@ fn build_fs(commands: Vec<Command>) -> FileSystem {
     let mut cwd = vec!["/".to_string()];
     for command in commands {
         match command {
-            Command::ChangeDirectory { target } => {
-                match String::from(target).as_str() {
-                    "/" => cwd.clear(),
-                    ".." => { cwd.pop(); }
-                    name => cwd.push(name.to_string())
+            Command::ChangeDirectory { target } => match String::from(target).as_str() {
+                "/" => cwd.clear(),
+                ".." => {
+                    cwd.pop();
                 }
-            }
+                name => cwd.push(name.to_string()),
+            },
             Command::List { entries } => {
                 let path = build_path(&cwd);
-                let size: u32 = entries.into_iter()
+                let size: u32 = entries
+                    .into_iter()
                     .filter_map(|e| match e {
                         ListEntry::Dir { name: _ } => Some(0),
-                        ListEntry::File { size, name: _ } => Some(size)
+                        ListEntry::File { size, name: _ } => Some(size),
                     })
                     .sum();
                 file_system.insert(path, size);
@@ -68,11 +69,13 @@ fn build_fs(commands: Vec<Command>) -> FileSystem {
 }
 
 fn filter_dir_size(fs: FileSystem, size_predicate: &dyn Fn(&u32) -> bool) -> Vec<u32> {
-    fs.keys().filter_map(|key|
-        fs.keys()
-            .filter(|k2| k2.starts_with(key))
-            .map(|k| fs.get(k)).sum()
-    )
+    fs.keys()
+        .filter_map(|key| {
+            fs.keys()
+                .filter(|k2| k2.starts_with(key))
+                .map(|k| fs.get(k))
+                .sum()
+        })
         .filter(size_predicate)
         .collect()
 }
@@ -80,7 +83,7 @@ fn filter_dir_size(fs: FileSystem, size_predicate: &dyn Fn(&u32) -> bool) -> Vec
 fn build_path(parts: &Vec<String>) -> String {
     match parts.len() {
         0 => "/".to_string(),
-        _ => format!("/{}/", parts.join("/"))
+        _ => format!("/{}/", parts.join("/")),
     }
 }
 
@@ -111,7 +114,12 @@ fn cd_command(input: &str) -> IResult<&str, Command> {
         alt((tag("/"), tag(".."), alphanumeric1)),
     )(input)?;
 
-    Ok((input, Command::ChangeDirectory { target: Cow::Borrowed(target) }))
+    Ok((
+        input,
+        Command::ChangeDirectory {
+            target: Cow::Borrowed(target),
+        },
+    ))
 }
 
 fn ls_command(input: &str) -> IResult<&str, Command> {
@@ -126,22 +134,32 @@ fn dir_entry(input: &str) -> IResult<&str, ListEntry> {
     let (input, _) = tag("dir ")(input)?;
     let (input, name) = alphanumeric1(input)?;
 
-    Ok((input, ListEntry::Dir { name: Cow::Borrowed(name) }))
+    Ok((
+        input,
+        ListEntry::Dir {
+            name: Cow::Borrowed(name),
+        },
+    ))
 }
 
 fn file_entry(input: &str) -> IResult<&str, ListEntry> {
     let (input, size) = complete::u32(input)?;
     let (input, name) = preceded(multispace1, not_line_ending)(input)?;
 
-    Ok((input, ListEntry::File { size, name: Cow::Borrowed(name) }))
+    Ok((
+        input,
+        ListEntry::File {
+            size,
+            name: Cow::Borrowed(name),
+        },
+    ))
 }
-
 
 #[cfg(test)]
 mod test {
-    use std::borrow::Cow;
-    use crate::day7::{Command, command, ListEntry, parse_terminal, solve_part1, solve_part2};
     use crate::day7::Command::ChangeDirectory;
+    use crate::day7::{command, parse_terminal, solve_part1, solve_part2, Command, ListEntry};
+    use std::borrow::Cow;
 
     const EXAMPLE: &str = r"$ cd /
 $ ls
@@ -176,15 +194,16 @@ $ ls
 
     #[test]
     fn test_cd() {
-        let expected = vec![
-            ("$ cd /", "/"),
-            ("$ cd ..", ".."),
-            ("$ cd x", "x"),
-        ];
+        let expected = vec![("$ cd /", "/"), ("$ cd ..", ".."), ("$ cd x", "x")];
         for (cmd, target) in expected {
             let (s, cmd) = command(cmd).unwrap();
             assert!(s.is_empty());
-            assert_eq!(cmd, ChangeDirectory { target: Cow::Borrowed(target) });
+            assert_eq!(
+                cmd,
+                ChangeDirectory {
+                    target: Cow::Borrowed(target)
+                }
+            );
         }
     }
 
@@ -196,10 +215,21 @@ dir e
 2557 g
 62596 h.lst";
         let entries: Vec<ListEntry> = vec![
-            ListEntry::Dir { name: Cow::Borrowed("e") },
-            ListEntry::File { size: 29116, name: Cow::Borrowed("f") },
-            ListEntry::File { size: 2557, name: Cow::Borrowed("g") },
-            ListEntry::File { size: 62596, name: Cow::Borrowed("h.lst") },
+            ListEntry::Dir {
+                name: Cow::Borrowed("e"),
+            },
+            ListEntry::File {
+                size: 29116,
+                name: Cow::Borrowed("f"),
+            },
+            ListEntry::File {
+                size: 2557,
+                name: Cow::Borrowed("g"),
+            },
+            ListEntry::File {
+                size: 62596,
+                name: Cow::Borrowed("h.lst"),
+            },
         ];
 
         let (s, cmd) = command(cmd).unwrap();

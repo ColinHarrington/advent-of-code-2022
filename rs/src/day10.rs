@@ -2,9 +2,9 @@ use itertools::Itertools;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::{i32 as nom_i32, newline};
-use nom::IResult;
 use nom::multi::separated_list1;
 use nom::sequence::preceded;
+use nom::IResult;
 use yaah::*;
 
 #[aoc_generator(day10)]
@@ -18,7 +18,7 @@ fn solve_part1(instructions: &Vec<Instruction>) -> i32 {
     let mut cycle = 1;
     let mut signal_strength = 0;
     for instruction in instructions {
-       signal_strength = boost_signal(signal_strength, cycle, x);
+        signal_strength = boost_signal(signal_strength, cycle, x);
         if let Instruction::ADDX(v) = instruction {
             cycle += 1;
             signal_strength = boost_signal(signal_strength, cycle, x);
@@ -47,7 +47,8 @@ fn solve_part2(instructions: &Vec<Instruction>) -> String {
             cycle += 1;
         }
     }
-    image.chunks(40)
+    image
+        .chunks(40)
         .map(|line| line.iter().collect::<String>())
         .join("\n")
 }
@@ -58,11 +59,11 @@ fn draw(cycle: i32, sprite: i32) {
     let position = (cycle - 1) % 40;
     let c = match lit(position, sprite) {
         true => '#',
-        false => '.'
+        false => '.',
     };
     match n {
         0 => print!("{c}\n"),
-        _ => print!("{c}")
+        _ => print!("{c}"),
     }
 }
 
@@ -70,19 +71,18 @@ fn pixel(cycle: i32, sprite: i32) -> char {
     let position = (cycle - 1) % 40;
     match lit(position, sprite) {
         true => '#',
-        false => '.'
+        false => '.',
     }
 }
-
 
 fn lit(n: i32, sprite: i32) -> bool {
     ((sprite)..(sprite + 3)).contains(&n)
 }
 
-fn boost_signal(signal:i32, cycle:i32, x: i32) -> i32 {
+fn boost_signal(signal: i32, cycle: i32, x: i32) -> i32 {
     match cycle % 40 {
         20 => signal + cycle * x,
-        _ => signal
+        _ => signal,
     }
 }
 
@@ -91,7 +91,6 @@ pub enum Instruction {
     NOOP,
     ADDX(i32),
 }
-
 
 fn parse_instructions(input: &str) -> IResult<&str, Vec<Instruction>> {
     separated_list1(newline, parse_instruction)(input)
@@ -113,7 +112,10 @@ fn parse_addx(input: &str) -> IResult<&str, Instruction> {
 
 #[cfg(test)]
 mod test {
-    use crate::day10::{gen, Instruction, parse_addx, parse_instruction, parse_instructions, parse_noop, solve_part1, solve_part2};
+    use crate::day10::{
+        gen, parse_addx, parse_instruction, parse_instructions, parse_noop, solve_part1,
+        solve_part2, Instruction,
+    };
 
     const SMALL_EXAMPLE: &str = r"noop
 addx 3
@@ -132,7 +134,10 @@ addx -5";
     #[test]
     fn instruction() {
         assert_eq!(Ok(("", Instruction::NOOP)), parse_instruction("noop"));
-        assert_eq!(Ok(("", Instruction::ADDX(77))), parse_instruction("addx 77"));
+        assert_eq!(
+            Ok(("", Instruction::ADDX(77))),
+            parse_instruction("addx 77")
+        );
     }
 
     #[test]
@@ -145,7 +150,8 @@ addx -5";
             Instruction::ADDX(-5),
         ];
 
-        instructions.iter()
+        instructions
+            .iter()
             .zip(expected_instructions.iter())
             .for_each(|(instruction, expected)| assert_eq!(instruction, expected));
     }
@@ -164,10 +170,10 @@ addx -5";
 ####....####....####....####....####....
 #####.....#####.....#####.....#####.....
 ######......######......######......####
-#######.......#######.......#######.....".to_string();
+#######.......#######.......#######....."
+            .to_string();
         assert_eq!(expected, solve_part2(&gen(LARGE_EXAMPLE)));
     }
-
 
     const LARGE_EXAMPLE: &str = r"addx 15
 addx -11

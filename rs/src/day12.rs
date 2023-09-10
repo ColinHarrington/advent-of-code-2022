@@ -1,21 +1,28 @@
-use std::fmt;
 use pathfinding::matrix::Matrix;
 use petgraph::algo::astar;
 use petgraph::prelude::DiGraphMap;
+use std::fmt;
 use yaah::*;
 
 #[aoc_generator(day12)]
 fn gen(input: &'static str) -> Matrix<Elevation> {
     Matrix::from_rows(
-        input.lines()
+        input
+            .lines()
             .enumerate()
-            .map(|(row, line)| line.chars()
-                .enumerate()
-                .map(|(column, height)| Elevation { row, column, height })
-                .collect()
-            )
-            .collect::<Vec<Vec<Elevation>>>()
-    ).unwrap()
+            .map(|(row, line)| {
+                line.chars()
+                    .enumerate()
+                    .map(|(column, height)| Elevation {
+                        row,
+                        column,
+                        height,
+                    })
+                    .collect()
+            })
+            .collect::<Vec<Vec<Elevation>>>(),
+    )
+    .unwrap()
 }
 
 #[aoc(day12, part1)]
@@ -31,10 +38,14 @@ fn solve_part2(map: &Matrix<Elevation>) -> u32 {
 fn hike(map: &Matrix<Elevation>, from: char, to: char) -> u32 {
     let mut graph: DiGraphMap<Elevation, u32> = DiGraphMap::new();
 
-    let edges = map.items()
-        .map(|(_, &elevation)| successors(map, elevation.clone()).iter()
-            .map(|&other| (elevation, other, 1u32))
-            .collect::<Vec<(Elevation, Elevation, u32)>>())
+    let edges = map
+        .items()
+        .map(|(_, &elevation)| {
+            successors(map, elevation.clone())
+                .iter()
+                .map(|&other| (elevation, other, 1u32))
+                .collect::<Vec<(Elevation, Elevation, u32)>>()
+        })
         .flatten()
         .collect::<Vec<(Elevation, Elevation, u32)>>();
 
@@ -47,22 +58,20 @@ fn hike(map: &Matrix<Elevation>, from: char, to: char) -> u32 {
 
     let start = graph.nodes().find(|n| n.height == from).unwrap();
 
-    let (steps, _) = astar(&graph, start,
-                           |e| e.height == to,
-                           |_| 1,
-                           |_| 0).unwrap();
+    let (steps, _) = astar(&graph, start, |e| e.height == to, |_| 1, |_| 0).unwrap();
 
     steps as u32
 }
 
 fn successors(map: &Matrix<Elevation>, elevation: Elevation) -> Vec<Elevation> {
-    let horses = map.neighbours((elevation.row, elevation.column), false)
+    let horses = map
+        .neighbours((elevation.row, elevation.column), false)
         .map(|rc| *map.get(rc).unwrap())
         .filter(|neighbor| is_passable(&elevation, neighbor))
         .collect::<Vec<Elevation>>();
     match horses.iter().find(|&e| e.height == 'E') {
         Some(&end) => vec![end],
-        None => horses
+        None => horses,
     }
 }
 
@@ -92,7 +101,7 @@ impl Elevation {
         match self.height {
             'E' => 'z' as u32,
             'S' => 'a' as u32,
-            c => c as u32
+            c => c as u32,
         }
     }
 }
@@ -123,4 +132,3 @@ abdefghi";
         assert_eq!(29, solve_part2(&gen(EXAMPLE)));
     }
 }
-

@@ -1,21 +1,23 @@
+use itertools::Itertools;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::fmt::{Display, Formatter};
 use std::ops::RangeInclusive;
-use itertools::Itertools;
 use yaah::*;
 
 #[aoc_generator(day23)]
 fn elf_map(input: &'static str) -> Vec<Elf> {
-    input.lines().enumerate()
-        .map(|(row, line)|
+    input
+        .lines()
+        .enumerate()
+        .map(|(row, line)| {
             line.chars()
                 .enumerate()
                 .filter_map(|(column, c)| match c {
                     '#' => Some(Elf::from((row, column))),
-                    _ => None
+                    _ => None,
                 })
                 .collect::<Vec<Elf>>()
-        )
+        })
         .flatten()
         .collect::<Vec<Elf>>()
 }
@@ -24,19 +26,25 @@ fn elf_map(input: &'static str) -> Vec<Elf> {
 fn solve_part1(elves: &Vec<Elf>) -> i32 {
     let rounds = 10;
     let mut grove = Grove {
-        field: HashSet::from_iter(elves.clone().into_iter())
+        field: HashSet::from_iter(elves.clone().into_iter()),
     };
 
-    let mut directions: VecDeque<Direction> = [Direction::North, Direction::South, Direction::West, Direction::East].into();
+    let mut directions: VecDeque<Direction> = [
+        Direction::North,
+        Direction::South,
+        Direction::West,
+        Direction::East,
+    ]
+    .into();
 
-    (1..=rounds).into_iter()
-        .for_each(|_| {
-            grove.execute_round(&directions.clone())
-                .into_iter()
-                .for_each(|(new, old)| grove.swap(new, old));
+    (1..=rounds).into_iter().for_each(|_| {
+        grove
+            .execute_round(&directions.clone())
+            .into_iter()
+            .for_each(|(new, old)| grove.swap(new, old));
 
-            directions.rotate_left(1);
-        });
+        directions.rotate_left(1);
+    });
 
     grove.empty_tiles()
 }
@@ -44,17 +52,24 @@ fn solve_part1(elves: &Vec<Elf>) -> i32 {
 #[aoc(day23, part2)]
 fn solve_part2(elves: &Vec<Elf>) -> i32 {
     let mut grove = Grove {
-        field: HashSet::from_iter(elves.clone().into_iter())
+        field: HashSet::from_iter(elves.clone().into_iter()),
     };
 
-    let mut directions: VecDeque<Direction> = [Direction::North, Direction::South, Direction::West, Direction::East].into();
+    let mut directions: VecDeque<Direction> = [
+        Direction::North,
+        Direction::South,
+        Direction::West,
+        Direction::East,
+    ]
+    .into();
 
     for round in 1.. {
         let swaps = grove.execute_round(&directions.clone());
         if swaps.is_empty() {
             return round;
         }
-        swaps.into_iter()
+        swaps
+            .into_iter()
             .for_each(|(new, old)| grove.swap(new, old));
 
         directions.rotate_left(1);
@@ -95,13 +110,20 @@ impl Elf {
     fn propose_move(self: &Self, order: &VecDeque<Direction>, grove: &HashSet<Elf>) -> Option<Elf> {
         //Maybe a bitmask translation?
         let neighbors: Vec<Elf> = vec![
-            (-1, -1), (-1, 0), (-1, 1),
-            (0, -1), (0, 1),
-            (1, -1), (1, 0), (1, 1),
-        ].into_iter()
-            .map(|t| transform(self, t))
-            .collect();
-        let mask = neighbors.iter()
+            (-1, -1),
+            (-1, 0),
+            (-1, 1),
+            (0, -1),
+            (0, 1),
+            (1, -1),
+            (1, 0),
+            (1, 1),
+        ]
+        .into_iter()
+        .map(|t| transform(self, t))
+        .collect();
+        let mask = neighbors
+            .iter()
             .enumerate()
             .filter(|(_, e)| grove.contains(e))
             .map(|(i, _)| 1 << (i as u8))
@@ -109,7 +131,8 @@ impl Elf {
         if mask == 0u8 {
             return None;
         }
-        order.iter()
+        order
+            .iter()
             .find(|&d| (mask & direction_mask(d.clone())) == 0u8)
             .map(|direction| match *direction {
                 Direction::North => (-1, 0),
@@ -159,15 +182,17 @@ impl Display for Grove {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let (row_range, column_range) = self.range();
         let lines = row_range
-            .map(|row| column_range.clone()
-                .map(|column| Elf { row, column })
-                .map(|elf| self.field.get(&elf))
-                .map(|elf| match elf {
-                    Some(_) => '#',
-                    None => '.'
-                })
-                .join("")
-            )
+            .map(|row| {
+                column_range
+                    .clone()
+                    .map(|column| Elf { row, column })
+                    .map(|elf| self.field.get(&elf))
+                    .map(|elf| match elf {
+                        Some(_) => '#',
+                        None => '.',
+                    })
+                    .join("")
+            })
             .join("\n");
         writeln!(f, "{lines}")
     }
@@ -187,30 +212,31 @@ impl Grove {
             RangeInclusive::new(
                 self.field.iter().map(|e| e.column).min().unwrap(),
                 self.field.iter().map(|e| e.column).max().unwrap(),
-            )
+            ),
         )
     }
 
     fn empty_tiles(self: &Self) -> i32 {
         let (row_range, column_range) = self.range();
         // dbg!(&row_range,&column_range);
-        (row_range.end() + 1 - row_range.start()) * (column_range.end() + 1 - column_range.start()) - (self.elf_count() as i32)
+        (row_range.end() + 1 - row_range.start()) * (column_range.end() + 1 - column_range.start())
+            - (self.elf_count() as i32)
     }
 
     fn execute_round(&mut self, operations: &VecDeque<Direction>) -> HashMap<Elf, Elf> {
         let mut proposal_map: HashMap<Elf, Vec<Elf>> = HashMap::new();
 
-        self.field.iter()
+        self.field
+            .iter()
             .map(|e| (e.propose_move(&operations.clone(), &self.field), e.clone()))
             .filter(|(proposed, _)| proposed.is_some())
             .map(|(proposed, elf)| (proposed.unwrap(), elf))
-            .for_each(|(proposed, elf)|
-                proposal_map.entry(proposed)
-                    .or_default()
-                    .push(elf.clone())
-            );
+            .for_each(|(proposed, elf)| {
+                proposal_map.entry(proposed).or_default().push(elf.clone())
+            });
         proposal_map.retain(|_, proposers| proposers.len() == 1);
-        proposal_map.into_iter()
+        proposal_map
+            .into_iter()
             .map(|(new, proposers)| (new, proposers.first().unwrap().clone()))
             .collect()
     }
@@ -237,8 +263,8 @@ impl Grove {
 ///
 #[cfg(test)]
 mod test {
+    use crate::day23::{elf_map, solve_part1, solve_part2, Elf, Grove};
     use std::collections::HashSet;
-    use crate::day23::{Elf, elf_map, Grove, solve_part1, solve_part2};
 
     const EXAMPLE: &str = r"....#..
 ..###.#
@@ -295,7 +321,6 @@ mod test {
 ..............";
         let elves = elf_map(stringy_grove);
         assert_eq!(22, elves.len());
-
 
         let field: HashSet<Elf> = HashSet::from_iter(elves.clone().into_iter());
         let grove = Grove { field };

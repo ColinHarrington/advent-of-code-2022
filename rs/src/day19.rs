@@ -1,16 +1,16 @@
+use bitflags::bitflags;
+use nom::bytes::complete::tag;
+use nom::character::complete::{line_ending, u16 as nom_u16};
+use nom::combinator::map;
+use nom::multi::separated_list1;
+use nom::sequence::{delimited, separated_pair, tuple};
+use nom::IResult;
+use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use std::cmp::max;
 use std::convert::identity;
 use std::fmt::{Display, Formatter};
 use std::iter;
 use std::ops::{Add, Div, Mul, Sub};
-use bitflags::bitflags;
-use nom::bytes::complete::tag;
-use nom::character::complete::{line_ending, u16 as nom_u16};
-use nom::combinator::map;
-use nom::IResult;
-use nom::multi::separated_list1;
-use nom::sequence::{delimited, separated_pair, tuple};
-use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use yaah::*;
 
 bitflags! {
@@ -43,22 +43,31 @@ fn dfs(blueprint: &Blueprint, state: State) -> u16 {
         blueprint.next_obsidian_bot(&state),
         blueprint.next_clay_bot(&state),
         blueprint.next_ore_bot(&state),
-    ].into_iter()
-        .filter_map(identity)
-        .collect();
+    ]
+    .into_iter()
+    .filter_map(identity)
+    .collect();
     if let Some(next_geode_state) = blueprint.next_geode_bot(&state) {
         let threshold = next_geode_state.minutes_remaining;
-        next_states.into_iter()
+        next_states
+            .into_iter()
             .filter(|next_state| next_state.minutes_remaining > threshold)
             .chain(iter::once(next_geode_state))
-            .map(|next_state| if next_state.minutes_remaining > 0 { dfs(blueprint, next_state) } else { next_state.geode })
+            .map(|next_state| {
+                if next_state.minutes_remaining > 0 {
+                    dfs(blueprint, next_state)
+                } else {
+                    next_state.geode
+                }
+            })
             .max()
     } else {
-        next_states.into_iter()
+        next_states
+            .into_iter()
             .map(|next_state| dfs(blueprint, next_state))
             .max()
     }
-        .unwrap_or(state.geode)
+    .unwrap_or(state.geode)
 }
 
 fn next_bot(have: u16, cost: u16, bots: u16) -> Option<u16> {
@@ -68,9 +77,9 @@ fn next_bot(have: u16, cost: u16, bots: u16) -> Option<u16> {
             None => Some(1),
             Some(needed) => match needed.add(bots).sub(1).div(bots) {
                 0 => Some(1),
-                n => Some(n + 1)
-            }
-        }
+                n => Some(n + 1),
+            },
+        },
     }
 }
 
@@ -88,8 +97,10 @@ impl Blueprint {
         dfs(self, State::initial(minutes))
     }
     fn max_ore(&self) -> u16 {
-        max(max(self.ore_cost, self.clay_cost),
-            max(self.obsidian_cost.0, self.geode_cost.0))
+        max(
+            max(self.ore_cost, self.clay_cost),
+            max(self.obsidian_cost.0, self.geode_cost.0),
+        )
     }
     fn quality_level(&self, geodes: u16) -> u32 {
         self.id as u32 * geodes as u32
@@ -101,9 +112,16 @@ impl Blueprint {
                 if let Some(minutes_remaining) = state.minutes_remaining.checked_sub(minutes) {
                     if minutes_remaining > 0 {
                         let ore_bots = state.ore_bots + 1;
-                        let flags: Flag = if ore_bots >= self.max_ore() { state.flags - Flag::NEED_ORE } else { state.flags };
+                        let flags: Flag = if ore_bots >= self.max_ore() {
+                            state.flags - Flag::NEED_ORE
+                        } else {
+                            state.flags
+                        };
                         Some(State {
-                            ore: state.ore.add(state.ore_bots.mul(minutes)).sub(self.ore_cost),
+                            ore: state
+                                .ore
+                                .add(state.ore_bots.mul(minutes))
+                                .sub(self.ore_cost),
                             clay: state.clay.add(state.clay_bots.mul(minutes)),
                             obsidian: state.obsidian.add(state.obsidian_bots.mul(minutes)),
                             ore_bots,
@@ -111,10 +129,18 @@ impl Blueprint {
                             flags,
                             ..*state
                         })
-                    } else { None }
-                } else { None }
-            } else { None }
-        } else { None }
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        } else {
+            None
+        }
     }
 
     fn next_clay_bot(&self, state: &State) -> Option<State> {
@@ -123,9 +149,16 @@ impl Blueprint {
                 if let Some(minutes_remaining) = state.minutes_remaining.checked_sub(minutes) {
                     if minutes_remaining > 0 {
                         let clay_bots = state.clay_bots + 1;
-                        let flags: Flag = if clay_bots >= self.obsidian_cost.1 { state.flags - Flag::NEED_CLAY } else { state.flags };
+                        let flags: Flag = if clay_bots >= self.obsidian_cost.1 {
+                            state.flags - Flag::NEED_CLAY
+                        } else {
+                            state.flags
+                        };
                         Some(State {
-                            ore: state.ore.add(state.ore_bots.mul(minutes)).sub(self.clay_cost),
+                            ore: state
+                                .ore
+                                .add(state.ore_bots.mul(minutes))
+                                .sub(self.clay_cost),
                             clay: state.clay.add(state.clay_bots.mul(minutes)),
                             obsidian: state.obsidian.add(state.obsidian_bots.mul(minutes)),
                             clay_bots,
@@ -133,55 +166,101 @@ impl Blueprint {
                             flags,
                             ..*state
                         })
-                    } else { None }
-                } else { None }
-            } else { None }
-        } else { None }
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        } else {
+            None
+        }
     }
 
     fn next_obsidian_bot(&self, state: &State) -> Option<State> {
         if state.flags.contains(Flag::NEED_OBSIDIAN) {
             if let Some(ore_minutes) = next_bot(state.ore, self.obsidian_cost.0, state.ore_bots) {
-                if let Some(clay_minutes) = next_bot(state.clay, self.obsidian_cost.1, state.clay_bots) {
+                if let Some(clay_minutes) =
+                    next_bot(state.clay, self.obsidian_cost.1, state.clay_bots)
+                {
                     let minutes = clay_minutes.max(ore_minutes);
                     if let Some(minutes_remaining) = state.minutes_remaining.checked_sub(minutes) {
                         if minutes_remaining > 0 {
                             let obsidian_bots = state.obsidian_bots + 1;
-                            let flags: Flag = if obsidian_bots >= self.geode_cost.1 { state.flags - Flag::NEED_OBSIDIAN } else { state.flags };
+                            let flags: Flag = if obsidian_bots >= self.geode_cost.1 {
+                                state.flags - Flag::NEED_OBSIDIAN
+                            } else {
+                                state.flags
+                            };
                             Some(State {
-                                ore: state.ore.add(state.ore_bots.mul(minutes)).sub(self.obsidian_cost.0),
-                                clay: state.clay.add(state.clay_bots.mul(minutes)).sub(self.obsidian_cost.1),
+                                ore: state
+                                    .ore
+                                    .add(state.ore_bots.mul(minutes))
+                                    .sub(self.obsidian_cost.0),
+                                clay: state
+                                    .clay
+                                    .add(state.clay_bots.mul(minutes))
+                                    .sub(self.obsidian_cost.1),
                                 obsidian: state.obsidian.add(state.obsidian_bots.mul(minutes)),
                                 obsidian_bots,
                                 minutes_remaining,
                                 flags,
                                 ..*state
                             })
-                        } else { None }
-                    } else { None }
-                } else { None }
-            } else { None }
-        } else { None }
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        } else {
+            None
+        }
     }
 
     fn next_geode_bot(&self, state: &State) -> Option<State> {
         if let Some(ore_minutes) = next_bot(state.ore, self.geode_cost.0, state.ore_bots) {
-            if let Some(obsidian_minutes) = next_bot(state.obsidian, self.geode_cost.1, state.obsidian_bots) {
+            if let Some(obsidian_minutes) =
+                next_bot(state.obsidian, self.geode_cost.1, state.obsidian_bots)
+            {
                 let minutes = obsidian_minutes.max(ore_minutes);
                 if let Some(minutes_remaining) = state.minutes_remaining.checked_sub(minutes) {
                     if minutes_remaining > 0 {
                         Some(State {
-                            ore: state.ore.add(state.ore_bots.mul(minutes)).sub(self.geode_cost.0),
+                            ore: state
+                                .ore
+                                .add(state.ore_bots.mul(minutes))
+                                .sub(self.geode_cost.0),
                             clay: state.clay.add(state.clay_bots.mul(minutes)),
-                            obsidian: state.obsidian.add(state.obsidian_bots.mul(minutes)).sub(self.geode_cost.1),
+                            obsidian: state
+                                .obsidian
+                                .add(state.obsidian_bots.mul(minutes))
+                                .sub(self.geode_cost.1),
                             geode: state.geode.add(minutes_remaining),
                             minutes_remaining,
                             ..*state
                         })
-                    } else { None }
-                } else { None }
-            } else { None }
-        } else { None }
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        } else {
+            None
+        }
     }
 }
 
@@ -217,18 +296,38 @@ impl State {
     fn print(&self) {
         if self.ore_bots > 0 {
             let robot = if self.ore_bots > 1 { "robots" } else { "robot" };
-            println!("{} ore-collecting {robot} collects {} ore; you now have {} ore.", self.ore_bots, self.ore_bots, self.ore)
+            println!(
+                "{} ore-collecting {robot} collects {} ore; you now have {} ore.",
+                self.ore_bots, self.ore_bots, self.ore
+            )
         }
         if self.clay_bots > 0 {
-            let robot = if self.clay_bots > 1 { "robots" } else { "robot" };
-            println!("{} clay-collecting {robot} collect {} clay; you now have {} clay.", self.clay_bots, self.clay_bots, self.clay)
+            let robot = if self.clay_bots > 1 {
+                "robots"
+            } else {
+                "robot"
+            };
+            println!(
+                "{} clay-collecting {robot} collect {} clay; you now have {} clay.",
+                self.clay_bots, self.clay_bots, self.clay
+            )
         }
         if self.obsidian_bots > 0 {
-            let robot = if self.obsidian_bots > 1 { "robots" } else { "robot" };
-            println!("{} obsidian-collecting {robot} collect {} obsidian; you now have {} obsidian.", self.obsidian_bots, self.obsidian_bots, self.obsidian)
+            let robot = if self.obsidian_bots > 1 {
+                "robots"
+            } else {
+                "robot"
+            };
+            println!(
+                "{} obsidian-collecting {robot} collect {} obsidian; you now have {} obsidian.",
+                self.obsidian_bots, self.obsidian_bots, self.obsidian
+            )
         }
         if self.geode > 0 {
-            println!("X geode-cracking robots crack X geodes; you now have {} open geodes.", self.geode)
+            println!(
+                "X geode-cracking robots crack X geodes; you now have {} open geodes.",
+                self.geode
+            )
         }
     }
     #[cfg(feature = "debug")]
@@ -245,7 +344,19 @@ impl State {
 
 impl Display for State {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "t={}, [{}, {}, {}, {}] ({},{},{}) |{:?}| ", self.minutes_remaining, self.geode, self.obsidian, self.clay, self.ore, self.obsidian_bots, self.clay_bots, self.ore_bots, self.flags)
+        write!(
+            f,
+            "t={}, [{}, {}, {}, {}] ({},{},{}) |{:?}| ",
+            self.minutes_remaining,
+            self.geode,
+            self.obsidian,
+            self.clay,
+            self.ore,
+            self.obsidian_bots,
+            self.clay_bots,
+            self.ore_bots,
+            self.flags
+        )
     }
 }
 
@@ -259,14 +370,16 @@ fn blueprints(input: &str) -> IResult<&str, Vec<Blueprint>> {
 }
 
 fn blueprint(input: &str) -> IResult<&str, Blueprint> {
-    map(tuple((blueprint_id, ore_cost, clay_cost, obsidian_cost, geode_cost)),
+    map(
+        tuple((blueprint_id, ore_cost, clay_cost, obsidian_cost, geode_cost)),
         |(id, ore, clay, obsidian, geode)| Blueprint {
             id,
             ore_cost: ore,
             clay_cost: clay,
             obsidian_cost: obsidian,
             geode_cost: geode,
-        })(input)
+        },
+    )(input)
 }
 
 fn blueprint_id(input: &str) -> IResult<&str, u16> {
@@ -282,19 +395,26 @@ fn clay_cost(input: &str) -> IResult<&str, u16> {
 }
 
 fn obsidian_cost(input: &str) -> IResult<&str, (u16, u16)> {
-    delimited(tag("Each obsidian robot costs "), separated_pair(nom_u16, tag(" ore and "), nom_u16), tag(" clay. "))(input)
+    delimited(
+        tag("Each obsidian robot costs "),
+        separated_pair(nom_u16, tag(" ore and "), nom_u16),
+        tag(" clay. "),
+    )(input)
 }
 
 fn geode_cost(input: &str) -> IResult<&str, (u16, u16)> {
-    delimited(tag("Each geode robot costs "), separated_pair(nom_u16, tag(" ore and "), nom_u16), tag(" obsidian."))(input)
+    delimited(
+        tag("Each geode robot costs "),
+        separated_pair(nom_u16, tag(" ore and "), nom_u16),
+        tag(" obsidian."),
+    )(input)
 }
-
 
 #[cfg(test)]
 mod test {
+    use crate::day19::{dfs, next_bot, read_blueprints, solve_part1, Blueprint, Flag, State};
     #[cfg(feature = "debug")]
     use std::collections::HashMap;
-    use crate::day19::{Blueprint, dfs, Flag, next_bot, read_blueprints, solve_part1, State};
 
     const EXAMPLE: &str = r"Blueprint 1: Each ore robot costs 4 ore. Each clay robot costs 2 ore. Each obsidian robot costs 3 ore and 14 clay. Each geode robot costs 2 ore and 7 obsidian.
 Blueprint 2: Each ore robot costs 2 ore. Each clay robot costs 3 ore. Each obsidian robot costs 3 ore and 8 clay. Each geode robot costs 3 ore and 12 obsidian.";
@@ -349,7 +469,8 @@ Blueprint 2: Each ore robot costs 2 ore. Each clay robot costs 3 ore. Each obsid
             Bot::GEODE,
         ];
         let initial_state = State::initial(24);
-        let mut scenario: HashMap<u16, State> = HashMap::from([(initial_state.minutes_remaining, initial_state.clone())]);
+        let mut scenario: HashMap<u16, State> =
+            HashMap::from([(initial_state.minutes_remaining, initial_state.clone())]);
         let final_state = path.into_iter().fold(initial_state.clone(), |state, bot| {
             let next_state = match bot {
                 Bot::ORE => blueprint.next_ore_bot(&state).unwrap(),
@@ -373,7 +494,6 @@ Blueprint 2: Each ore robot costs 2 ore. Each clay robot costs 3 ore. Each obsid
             }
             println!("");
         }
-
 
         assert_eq!(9, final_state.geode);
     }

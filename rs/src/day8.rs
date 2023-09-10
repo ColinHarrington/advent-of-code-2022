@@ -6,10 +6,7 @@ type VisibilityPlot = Vec<Vec<bool>>;
 
 #[aoc_generator(day8)]
 fn gen(input: &'static str) -> Vec<Vec<char>> {
-    input
-        .lines()
-        .map(|s| s.chars().collect())
-        .collect()
+    input.lines().map(|s| s.chars().collect()).collect()
 }
 
 #[aoc(day8, part1)]
@@ -17,23 +14,23 @@ fn solve_part1(rows: &TreeRows) -> u32 {
     let columns: TreeRows = transpose(&rows);
     let visibility_plot = visibility_plot(rows, &columns);
 
-    visibility_plot.iter()
-        .map(|row| row.iter()
-            .filter(|v| **v)
-            .count() as u32
-        )
+    visibility_plot
+        .iter()
+        .map(|row| row.iter().filter(|v| **v).count() as u32)
         .sum()
 }
 
 #[aoc(day8, part2)]
 fn solve_part2(trees: &TreeRows) -> u32 {
-    trees.iter()
+    trees
+        .iter()
         .enumerate()
-        .map(|(y, row)| row.iter()
-            .enumerate()
-            .map(|(x, treehouse)| scenic_score(x, y, trees, *treehouse))
-            .collect::<Vec<u32>>()
-        )
+        .map(|(y, row)| {
+            row.iter()
+                .enumerate()
+                .map(|(x, treehouse)| scenic_score(x, y, trees, *treehouse))
+                .collect::<Vec<u32>>()
+        })
         // .inspect(|o|println!("{:?}",o))
         .flatten()
         .max()
@@ -46,68 +43,56 @@ fn scenic_score(x: usize, y: usize, trees: &TreeRows, treehouse: char) -> u32 {
         down(x, y, trees),
         left(x, y, trees),
         right(x, y, trees),
-    ].iter()
-        .map(|sightline| visible_trees(treehouse, sightline))
-        .product::<u32>()
+    ]
+    .iter()
+    .map(|sightline| visible_trees(treehouse, sightline))
+    .product::<u32>()
 }
 
 fn up(x: usize, y: usize, trees: &TreeRows) -> TreeRow {
-    (0..y).into_iter()
-        .rev()
-        .map(|i| trees[i][x])
-        .collect()
+    (0..y).into_iter().rev().map(|i| trees[i][x]).collect()
 }
 
 fn down(x: usize, y: usize, trees: &TreeRows) -> TreeRow {
     let size = trees.len();
-    ((y + 1)..size).into_iter()
-        .map(|i| trees[i][x])
-        .collect()
+    ((y + 1)..size).into_iter().map(|i| trees[i][x]).collect()
 }
 
 fn left(x: usize, y: usize, trees: &TreeRows) -> TreeRow {
-    (0..x).into_iter()
-        .rev()
-        .map(|i| trees[y][i])
-        .collect()
+    (0..x).into_iter().rev().map(|i| trees[y][i]).collect()
 }
 
 fn right(x: usize, y: usize, trees: &TreeRows) -> TreeRow {
     let size = trees[0].len();
-    ((x + 1)..size).into_iter()
-        .map(|i| trees[y][i])
-        .collect()
+    ((x + 1)..size).into_iter().map(|i| trees[y][i]).collect()
 }
 
 fn visible_trees(treehouse: char, trees: &TreeRow) -> u32 {
-    match trees.iter()
+    match trees
+        .iter()
         .enumerate()
         .find_map(|(idx, tree)| match *tree >= treehouse {
             true => Some(&trees[..=idx]),
-            false => None
+            false => None,
         }) {
         Some(tr) => tr.len() as u32,
-        None => trees.len() as u32
+        None => trees.len() as u32,
     }
 }
 
 fn transpose(rows: &TreeRows) -> TreeRows {
-    rows[0].iter()
+    rows[0]
+        .iter()
         .enumerate()
-        .map(|(i, _)| rows.iter()
-            .map(|row| row[i])
-            .collect::<TreeRow>()
-        )
+        .map(|(i, _)| rows.iter().map(|row| row[i]).collect::<TreeRow>())
         .collect()
 }
 
 fn transpose_plot(rows: &VisibilityPlot) -> VisibilityPlot {
-    rows[0].iter()
+    rows[0]
+        .iter()
         .enumerate()
-        .map(|(i, _)| rows.iter()
-            .map(|row| row[i])
-            .collect::<Vec<bool>>()
-        )
+        .map(|(i, _)| rows.iter().map(|row| row[i]).collect::<Vec<bool>>())
         .collect()
 }
 
@@ -127,21 +112,23 @@ fn directional_visibility(row: &TreeRow) -> Vec<bool> {
 fn visibility_plot(rows: &TreeRows, columns: &TreeRows) -> VisibilityPlot {
     rows.iter()
         .map(directional_visibility)
-        .zip(transpose_plot(&columns.iter()
-            .map(directional_visibility)
-            .collect()
-        ).iter())
-        .map(|(row_visibility, column_visibility)| row_visibility.iter()
-            .zip(column_visibility.iter())
-            .map(|(row_value, column_value)| *row_value || *column_value)
-            .collect::<Vec<bool>>()
-        )
+        .zip(transpose_plot(&columns.iter().map(directional_visibility).collect()).iter())
+        .map(|(row_visibility, column_visibility)| {
+            row_visibility
+                .iter()
+                .zip(column_visibility.iter())
+                .map(|(row_value, column_value)| *row_value || *column_value)
+                .collect::<Vec<bool>>()
+        })
         .collect::<VisibilityPlot>()
 }
 
 #[cfg(test)]
 mod test {
-    use crate::day8::{gen, scenic_score, solve_part1, solve_part2, transpose, TreeRows, visibility_plot, VisibilityPlot, visible_trees};
+    use crate::day8::{
+        gen, scenic_score, solve_part1, solve_part2, transpose, visibility_plot, visible_trees,
+        TreeRows, VisibilityPlot,
+    };
 
     const EXAMPLE: &str = r"30373
 25512
@@ -232,13 +219,15 @@ mod test {
 
     fn print_visibility_plot(map: &VisibilityPlot) {
         map.iter()
-            .map(|column| column.iter()
-                .map(|v| match *v {
-                    true => '+',
-                    false => ' '
-                })
-                .collect::<String>()
-            )
+            .map(|column| {
+                column
+                    .iter()
+                    .map(|v| match *v {
+                        true => '+',
+                        false => ' ',
+                    })
+                    .collect::<String>()
+            })
             .for_each(|s| println!("{:?}", s))
     }
 }

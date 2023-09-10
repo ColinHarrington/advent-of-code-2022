@@ -1,21 +1,23 @@
-use std::str::FromStr;
 use nom::branch::alt;
+use nom::character::complete::u8 as nom_u8;
 use nom::character::complete::{char as nom_char, newline, one_of};
 use nom::combinator::map as nom_map;
-use nom::IResult;
 use nom::multi::{many1, separated_list1};
-use nom::character::complete::u8 as nom_u8;
 use nom::sequence::{pair, separated_pair};
+use nom::IResult;
+use std::str::FromStr;
 // use pathfinding::matrix::Matrix;
 use yaah::*;
-
 
 #[aoc(day22, part1)]
 fn solve_part1(monkey_map: &MonkeyMap) -> usize {
     let (board, instructions) = monkey_map;
 
-    let result = instructions.iter()
-        .fold(board.initial_position(), |pos, instruction| execute_instruction(instruction, pos, board));
+    let result = instructions
+        .iter()
+        .fold(board.initial_position(), |pos, instruction| {
+            execute_instruction(instruction, pos, board)
+        });
 
     result.password()
 }
@@ -23,7 +25,7 @@ fn solve_part1(monkey_map: &MonkeyMap) -> usize {
 fn execute_instruction(instruction: &Instruction, position: Position, board: &Board) -> Position {
     match instruction {
         Instruction::Rotate(r) => position.rotate(r),
-        Instruction::Steps(steps) => position.steps(*steps as usize, board)
+        Instruction::Steps(steps) => position.steps(*steps as usize, board),
     }
 }
 
@@ -38,7 +40,10 @@ pub struct Position {
 
 impl Position {
     fn rotate(&self, rotation: &Rotation) -> Position {
-        Position { facing: self.facing.rotate(rotation), ..*self }
+        Position {
+            facing: self.facing.rotate(rotation),
+            ..*self
+        }
     }
 
     fn password(&self) -> usize {
@@ -62,7 +67,7 @@ impl Position {
     fn next_left(&self, board: &Board) -> Position {
         let column = match self.column {
             0 => board.width - 1,
-            r => r - 1
+            r => r - 1,
         };
         Position { column, ..*self }
     }
@@ -75,7 +80,7 @@ impl Position {
     fn next_up(&self, board: &Board) -> Position {
         let row = match self.row {
             0 => board.height - 1,
-            r => r - 1
+            r => r - 1,
         };
         Position { row, ..*self }
     }
@@ -96,11 +101,10 @@ impl Position {
         match tile {
             Tile::Open => Some(next),
             Tile::Closed => next.next(board),
-            Tile::Wall => None
+            Tile::Wall => None,
         }
     }
 }
-
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Board {
@@ -134,10 +138,13 @@ impl Board {
 
     fn tile(self: &Self, position: &Position) -> Tile {
         self.map
-            .get(position.row).unwrap()
-            .get(position.column).unwrap_or(&' ')
+            .get(position.row)
+            .unwrap()
+            .get(position.column)
+            .unwrap_or(&' ')
             .clone()
-            .try_into().unwrap()
+            .try_into()
+            .unwrap()
     }
 }
 
@@ -155,7 +162,7 @@ impl TryFrom<char> for Tile {
             '#' => Ok(Tile::Wall),
             '.' => Ok(Tile::Open),
             ' ' => Ok(Tile::Closed),
-            _ => Err(())
+            _ => Err(()),
         }
     }
 }
@@ -182,7 +189,7 @@ impl Direction {
                 Direction::Left => Direction::Down,
                 Direction::Down => Direction::Right,
                 Direction::Right => Direction::Up,
-            }
+            },
         }
     }
 
@@ -192,7 +199,7 @@ impl Direction {
             Direction::Right => 0,
             Direction::Down => 1,
             Direction::Left => 2,
-            Direction::Up => 3
+            Direction::Up => 3,
         }
     }
 }
@@ -232,7 +239,6 @@ impl FromStr for Rotation {
 //     TOP, NORTH, EAST, SOUTH, WEST, BOTTOM
 // }
 
-
 #[aoc_generator(day22)]
 fn read_monkey_map(input: &'static str) -> MonkeyMap {
     parse_input(input).unwrap().1
@@ -266,10 +272,9 @@ fn map_line(input: &str) -> IResult<&str, Vec<char>> {
 }
 
 fn map_board(input: &str) -> IResult<&str, Board> {
-    nom_map(
-        separated_list1(newline, map_line),
-        |lines| Board::from(lines),
-    )(input)
+    nom_map(separated_list1(newline, map_line), |lines| {
+        Board::from(lines)
+    })(input)
 }
 
 fn parse_input(input: &str) -> IResult<&str, (Board, Instructions)> {
@@ -278,11 +283,14 @@ fn parse_input(input: &str) -> IResult<&str, (Board, Instructions)> {
 
 #[cfg(test)]
 mod test {
-    use std::iter;
-    use itertools::Itertools;
     use crate::day22::Instruction::{Rotate, Steps};
-    use crate::day22::{Direction, execute_instruction, Instruction, instructions, parse_input, Position, read_monkey_map, solve_part1};
     use crate::day22::Rotation::{Left, Right};
+    use crate::day22::{
+        execute_instruction, instructions, parse_input, read_monkey_map, solve_part1, Direction,
+        Instruction, Position,
+    };
+    use itertools::Itertools;
+    use std::iter;
 
     const EXAMPLE: &str = r"        ...#
         .#..
@@ -355,10 +363,21 @@ mod test {
         ];
 
         let mut position = board.initial_position();
-        assert_eq!(position, Position { row: 0, column: 8, facing: Direction::Right });
+        assert_eq!(
+            position,
+            Position {
+                row: 0,
+                column: 8,
+                facing: Direction::Right
+            }
+        );
 
         for (instruction, (row, column, facing)) in iter::zip(instructions, expected_positions) {
-            let expected = Position { facing, row, column };
+            let expected = Position {
+                facing,
+                row,
+                column,
+            };
             position = execute_instruction(&instruction, position, &board);
             // println!("{:?} == {:?}", expected, position);
             assert_eq!(position, expected);
@@ -393,14 +412,17 @@ mod test {
         assert_eq!(position.password(), 6032);
     }
 
-
     #[test]
     fn read_input() {
         let (board, instructions) = read_monkey_map(&EXAMPLE);
         assert_eq!(instructions, example_instructions());
 
         let pos = board.initial_position();
-        let expected_initial_position = Position { row: 0, column: 8, facing: Direction::Right };
+        let expected_initial_position = Position {
+            row: 0,
+            column: 8,
+            facing: Direction::Right,
+        };
         assert_eq!(pos, expected_initial_position)
     }
 
