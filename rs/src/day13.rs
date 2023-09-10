@@ -78,7 +78,7 @@ fn packet_data_value(input: &str) -> IResult<&str, PacketData> {
 	Ok((input, PacketData::Value(value)))
 }
 
-#[derive(Debug, Eq, Clone, PartialOrd)]
+#[derive(Debug, Eq, Clone)]
 pub enum PacketData {
 	Value(u32),
 	List(Vec<PacketData>),
@@ -95,7 +95,7 @@ impl fmt::Display for PacketData {
 	}
 }
 
-impl PartialEq for PacketData {
+impl PartialEq<Self> for PacketData {
 	fn eq(&self, other: &Self) -> bool {
 		match (self, other) {
 			(Self::Value(left), Self::Value(right)) => left == right,
@@ -103,6 +103,12 @@ impl PartialEq for PacketData {
 			(Self::List(left), Self::Value(right)) => *left == vec![PacketData::Value(*right)],
 			(Self::List(left), Self::List(right)) => left == right,
 		}
+	}
+}
+
+impl PartialOrd<Self> for PacketData {
+	fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+		Some(self.cmp(other))
 	}
 }
 
