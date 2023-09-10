@@ -3,10 +3,7 @@ use yaah::*;
 
 #[aoc_generator(day4)]
 fn gen(input: &'static str) -> Vec<String> {
-    input
-        .lines()
-        .map(|s| s.to_string())
-        .collect()
+    input.lines().map(|s| s.to_string()).collect()
 }
 
 #[aoc(day4, part1)]
@@ -37,13 +34,15 @@ fn assignment_pair(s: &String) -> (RangeInclusive<u32>, RangeInclusive<u32>) {
 }
 
 pub fn fully_contains(r1: RangeInclusive<u32>, r2: RangeInclusive<u32>) -> bool {
-    (r1.contains(r2.start()) && r1.contains(r2.end())) ||
-        (r2.contains(r1.start()) && r2.contains(r1.end()))
+    (r1.contains(r2.start()) && r1.contains(r2.end()))
+        || (r2.contains(r1.start()) && r2.contains(r1.end()))
 }
 
 pub fn overlap_at_all(r1: RangeInclusive<u32>, r2: RangeInclusive<u32>) -> bool {
-    r1.contains(r2.start()) || r1.contains(r2.end())
-        || r2.contains(r1.start()) || r2.contains(r1.end())
+    r1.contains(r2.start())
+        || r1.contains(r2.end())
+        || r2.contains(r1.start())
+        || r2.contains(r1.end())
 }
 
 fn range_from_string(s: String) -> RangeInclusive<u32> {
