@@ -22,7 +22,7 @@ bitflags! {
 }
 
 #[aoc(day19, part1)]
-fn solve_part1(blueprints: &Vec<Blueprint>) -> u32 {
+fn solve_part1(blueprints: &[Blueprint]) -> u32 {
 	blueprints
 		.par_iter()
 		.map(|blueprint| blueprint.quality_level(blueprint.max_geodes(24)))
@@ -30,7 +30,7 @@ fn solve_part1(blueprints: &Vec<Blueprint>) -> u32 {
 }
 
 #[aoc(day19, part2)]
-fn solve_part2(blueprints: &Vec<Blueprint>) -> u32 {
+fn solve_part2(blueprints: &[Blueprint]) -> u32 {
 	blueprints[0..3]
 		.par_iter()
 		.map(|blueprint| blueprint.max_geodes(32) as u32)
@@ -207,7 +207,7 @@ impl Blueprint {
 								obsidian_bots,
 								minutes_remaining,
 								flags,
-								..*state
+								..*stateBlueprint
 							})
 						} else {
 							None
