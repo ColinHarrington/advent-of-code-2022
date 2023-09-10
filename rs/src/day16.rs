@@ -95,14 +95,6 @@ impl Ord for State {
 }
 
 impl State {
-    // fn initial(minutes: u32, current: usize, remaining: u16) -> Self {
-    //     Self {
-    //         minutes,
-    //         current,
-    //         remaining,
-    //         pressure: 0,
-    //     }
-    // }
     fn remains(&self, valve: &usize) -> bool {
         self.remaining & (1u16 << valve) != 0
     }
@@ -163,10 +155,6 @@ impl Volcano {
     fn position(&self, name: ValveLabel) -> usize {
         self.valves.iter()
             .position(|valve| valve.name == name).unwrap()
-    }
-
-    fn starting_position(&self) -> usize {
-        self.position(['A', 'A'])
     }
 
     fn start_state(&self, minutes: u32) -> State {
