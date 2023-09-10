@@ -10,7 +10,7 @@ fn solve_part1(rucksacks: &Vec<Rucksack>) -> i32 {
 	rucksacks
 		.iter()
 		.map(|rs| rs.shared_item())
-		.map(|c| item_type_value(c))
+		.map(item_type_value)
 		.sum()
 }
 
@@ -130,10 +130,10 @@ CrZsJsPPZsGzwwsLwLmpwMDw";
 	/// In the above example, the priority of the item type that appears in both compartments of each rucksack is 16 (p), 38 (L), 42 (P), 22 (v), 20 (t), and 19 (s);
 	#[test]
 	fn test_item_value() {
-		for (c, expected) in zip(('a'..='z').into_iter(), (1..=26).into_iter()).into_iter() {
+		for (c, expected) in zip('a'..='z', 1..=26) {
 			assert_eq!(expected, item_type_value(c));
 		}
-		for (c, expected) in zip(('A'..='Z').into_iter(), (27..=52).into_iter()).into_iter() {
+		for (c, expected) in zip('A'..='Z', 27..=52) {
 			assert_eq!(expected, item_type_value(c));
 		}
 
