@@ -147,6 +147,7 @@ mod test {
         let (tail, cubes) = cubes(EXAMPLE).unwrap();
 
         assert_eq!(13, cubes.len());
+        assert_eq!("", tail);
     }
 
     #[test]
