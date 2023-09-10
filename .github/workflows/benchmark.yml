@@ -28,6 +28,7 @@ jobs:
 
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
+        working-directory: rs
         with:
           name: Rust Benchmark
           tool: 'cargo'
