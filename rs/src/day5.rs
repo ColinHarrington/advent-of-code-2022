@@ -173,7 +173,7 @@ pub fn parse_move(input: &str) -> IResult<&str, Move> {
 
 // Parsing moves from input with nom
 pub fn moves(input: &str) -> IResult<&str, Vec<Move>> {
-	Ok(separated_list1(newline, parse_move)(input)?)
+	separated_list1(newline, parse_move)(input)
 }
 
 /// Parsing input with nom

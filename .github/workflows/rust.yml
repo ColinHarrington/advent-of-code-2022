@@ -29,16 +29,16 @@ jobs:
           rustc --version
           cargo clippy --version
 
-#      - name: Lint
-#        run: |
-#          cargo fmt -- --check
-#          cargo clippy -- -D warnings
-#        working-directory: rs
+      - name: Lint
+        run: |
+          cargo fmt -- --check
+          cargo clippy -- -D warnings
+        working-directory: rs
 
       - name: Build
         run: cargo build --verbose --release
         working-directory: rs
 
       - name: Run tests
-        run: cargo test --verbose
+        run: cargo test --verbose --release
         working-directory: rs

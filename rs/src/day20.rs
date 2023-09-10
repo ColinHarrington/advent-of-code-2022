@@ -17,10 +17,10 @@ fn read_input(input: &'static str) -> Vec<Element> {
 }
 
 #[aoc(day20, part1)]
-fn solve_part1(file: &Vec<Element>) -> i64 {
+fn solve_part1(file: &[Element]) -> i64 {
 	let mixed = file
 		.iter()
-		.fold(file.clone(), make_move)
+		.fold(file.to_owned(), make_move)
 		.iter()
 		.map(|e| e.1)
 		.collect();
@@ -28,7 +28,7 @@ fn solve_part1(file: &Vec<Element>) -> i64 {
 }
 
 #[aoc(day20, part2)]
-fn solve_part2(input: &Vec<Element>) -> i64 {
+fn solve_part2(input: &[Element]) -> i64 {
 	let decryption_key: i64 = 811589153;
 	let file: Vec<Element> = input
 		.iter()

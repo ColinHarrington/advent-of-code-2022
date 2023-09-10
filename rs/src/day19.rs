@@ -7,7 +7,6 @@ use nom::sequence::{delimited, separated_pair, tuple};
 use nom::IResult;
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use std::cmp::max;
-use std::convert::identity;
 use std::fmt::{Display, Formatter};
 use std::iter;
 use std::ops::{Add, Div, Mul, Sub};
@@ -23,7 +22,7 @@ bitflags! {
 }
 
 #[aoc(day19, part1)]
-fn solve_part1(blueprints: &Vec<Blueprint>) -> u32 {
+fn solve_part1(blueprints: &[Blueprint]) -> u32 {
 	blueprints
 		.par_iter()
 		.map(|blueprint| blueprint.quality_level(blueprint.max_geodes(24)))
@@ -31,7 +30,7 @@ fn solve_part1(blueprints: &Vec<Blueprint>) -> u32 {
 }
 
 #[aoc(day19, part2)]
-fn solve_part2(blueprints: &Vec<Blueprint>) -> u32 {
+fn solve_part2(blueprints: &[Blueprint]) -> u32 {
 	blueprints[0..3]
 		.par_iter()
 		.map(|blueprint| blueprint.max_geodes(32) as u32)
@@ -45,7 +44,7 @@ fn dfs(blueprint: &Blueprint, state: State) -> u16 {
 		blueprint.next_ore_bot(&state),
 	]
 	.into_iter()
-	.filter_map(identity)
+	.flatten()
 	.collect();
 	if let Some(next_geode_state) = blueprint.next_geode_bot(&state) {
 		let threshold = next_geode_state.minutes_remaining;

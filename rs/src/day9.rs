@@ -64,7 +64,7 @@ struct Rope {
 impl Rope {
 	pub fn knots(knots: Vec<Position>) -> Self {
 		Self {
-			knots: knots,
+			knots,
 			history: HashSet::from([(0, 0)]),
 		}
 	}
@@ -79,7 +79,7 @@ impl Rope {
 			Motion::Right(steps) => *steps as usize,
 		};
 
-		(0..steps).into_iter().for_each(|_| self.execute_step(step));
+		(0..steps).for_each(|_| self.execute_step(step));
 	}
 
 	fn execute_step(&mut self, step: Position) {
@@ -171,10 +171,7 @@ impl Rope {
 }
 
 fn tail_move(head: Position, tail: Position) -> Option<Position> {
-	match tail_movement(head, tail) {
-		Some(position) => Some(translate(tail, position)),
-		None => None,
-	}
+	tail_movement(head, tail).map(|position| translate(tail, position))
 }
 
 fn tail_movement(head: Position, tail: Position) -> Option<Position> {
@@ -205,7 +202,7 @@ fn translation_step(motion: &Motion) -> Position {
 }
 
 fn parse_motions(input: &str) -> IResult<&str, Vec<Motion>> {
-	Ok(separated_list1(line_ending, parse_motion)(input)?)
+	separated_list1(line_ending, parse_motion)(input)
 }
 
 fn parse_motion(input: &str) -> IResult<&str, Motion> {
@@ -273,13 +270,13 @@ U 20";
 
 	#[test]
 	fn part1() {
-		let motions = gen(&EXAMPLE);
+		let motions = gen(EXAMPLE);
 		assert_eq!(13, solve_part1(&motions))
 	}
 
 	#[test]
 	fn part2() {
-		let motions = gen(&EXAMPLE2);
+		let motions = gen(EXAMPLE2);
 		assert_eq!(36, solve_part2(&motions))
 	}
 }

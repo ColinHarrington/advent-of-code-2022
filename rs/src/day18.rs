@@ -15,8 +15,8 @@ fn read_cubes(input: &'static str) -> Vec<Cube> {
 }
 
 #[aoc(day18, part1)]
-fn solve_part1(cubes: &Vec<Cube>) -> usize {
-	let cube_set: HashSet<Cube> = HashSet::from_iter(cubes.into_iter().map(|&cube| cube));
+fn solve_part1(cubes: &[Cube]) -> usize {
+	let cube_set: HashSet<Cube> = HashSet::from_iter(cubes.iter().copied());
 	cube_set
 		.iter()
 		.map(|cube| {
@@ -29,8 +29,8 @@ fn solve_part1(cubes: &Vec<Cube>) -> usize {
 }
 
 #[aoc(day18, part2)]
-fn solve_part2(cubes: &Vec<Cube>) -> usize {
-	let cube_set: HashSet<Cube> = HashSet::from_iter(cubes.into_iter().map(|&cube| cube));
+fn solve_part2(cubes: &[Cube]) -> usize {
+	let cube_set: HashSet<Cube> = HashSet::from_iter(cubes.iter().copied());
 
 	let (lower, upper) = bounds(&cube_set);
 
@@ -94,7 +94,7 @@ fn fill(min: Cube, max: Cube, cubes: &HashSet<Cube>) -> HashSet<Cube> {
 			.filter(|c| cubes.contains(c).not())
 			.collect();
 		for fill_cube in new_fill {
-			flood.insert(fill_cube.clone());
+			flood.insert(fill_cube);
 			queue.push_back(fill_cube);
 		}
 	}

@@ -10,7 +10,7 @@ use yaah::*;
 fn solve_part1(jet_pattern: &'static str) -> usize {
 	let mut chamber = Chamber::default();
 
-	let mut shapes = vec![Shape::MINUS, Shape::PLUS, Shape::L, Shape::I, Shape::BOX]
+	let mut shapes = vec![Shape::Minus, Shape::Plus, Shape::L, Shape::I, Shape::Box]
 		.into_iter()
 		.cycle();
 	let mut jet_cycle = jet_pattern.trim().chars().cycle();
@@ -25,7 +25,7 @@ fn solve_part1(jet_pattern: &'static str) -> usize {
 fn solve_part2(jet_pattern: &'static str) -> u64 {
 	let mut chamber = Chamber::default();
 
-	let mut shapes = vec![Shape::MINUS, Shape::PLUS, Shape::L, Shape::I, Shape::BOX]
+	let mut shapes = vec![Shape::Minus, Shape::Plus, Shape::L, Shape::I, Shape::Box]
 		.into_iter()
 		.cycle();
 	let mut jet_cycle = jet_pattern.trim().chars().cycle();
@@ -34,7 +34,6 @@ fn solve_part2(jet_pattern: &'static str) -> u64 {
 	let rocks: u64 = (jet_pattern_size * 3) as u64;
 
 	let heights: Vec<u64> = (0u64..rocks)
-		.into_iter()
 		.map(|_| {
 			chamber.drop_shape(jet_cycle.borrow_mut(), &shapes.next().unwrap(), false);
 			chamber.height() as u64
@@ -76,7 +75,7 @@ fn solve_part2(jet_pattern: &'static str) -> u64 {
 	cycles * pattern_height + init_height + extra_height
 }
 
-fn match_distance(matches: &Vec<usize>) -> Option<usize> {
+fn match_distance(matches: &[usize]) -> Option<usize> {
 	let distances: Vec<usize> = matches
 		.iter()
 		.tuple_windows()
@@ -249,11 +248,7 @@ impl Chamber {
 
 	fn cyclic_pattern(&self, pattern: &[Vec<char>]) -> Option<(usize, usize)> {
 		let matches = self.matches(pattern);
-		if let Some(dist) = match_distance(&matches) {
-			Some((matches[0].clone(), dist))
-		} else {
-			None
-		}
+		match_distance(&matches).map(|dist| (matches[0], dist))
 	}
 
 	fn identify_cyclic_pattern(&self) -> Option<(u64, u64)> {
@@ -262,20 +257,20 @@ impl Chamber {
 			.filter_map(|window| self.cyclic_pattern(window))
 			.map(|(init, pattern_size)| init..(init + pattern_size))
 			.map(|range| &self.grid[range])
-			.find_map(|pattern| match self.cyclic_pattern(pattern) {
-				Some((init, dist)) => Some((init as u64, dist as u64)),
-				None => None,
+			.find_map(|pattern| {
+				self.cyclic_pattern(pattern)
+					.map(|(init, dist)| (init as u64, dist as u64))
 			})
 	}
 }
 
 #[derive(Clone)]
 enum Shape {
-	MINUS,
-	PLUS,
+	Minus,
+	Plus,
 	L,
 	I,
-	BOX,
+	Box,
 }
 
 impl Shape {
@@ -285,11 +280,11 @@ impl Shape {
 
 	fn sprite(&self) -> Vec<Vec<char>> {
 		match self {
-			Shape::MINUS => vec!["####"],
-			Shape::PLUS => vec![".#.", "###", ".#."],
+			Shape::Minus => vec!["####"],
+			Shape::Plus => vec![".#.", "###", ".#."],
 			Shape::L => vec!["..#", "..#", "###"],
 			Shape::I => vec!["#", "#", "#", "#"],
-			Shape::BOX => vec!["##", "##"],
+			Shape::Box => vec!["##", "##"],
 		}
 		.into_iter()
 		.map(|s| s.chars().collect())

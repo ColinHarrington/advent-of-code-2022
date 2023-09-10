@@ -23,7 +23,7 @@ fn generate_packet_list(input: &'static str) -> Vec<PacketData> {
 }
 
 #[aoc(day13, part1)]
-fn solve_part1(pairs: &Vec<PacketPair>) -> u32 {
+fn solve_part1(pairs: &[PacketPair]) -> u32 {
 	pairs
 		.iter()
 		.enumerate()
@@ -34,7 +34,7 @@ fn solve_part1(pairs: &Vec<PacketPair>) -> u32 {
 }
 
 #[aoc(day13, part2)]
-fn solve_part2(input: &Vec<PacketData>) -> u32 {
+fn solve_part2(input: &[PacketData]) -> u32 {
 	let dividers = vec![packet("[[2]]").unwrap().1, packet("[[6]]").unwrap().1];
 
 	let mut packets: Vec<PacketData> = input
@@ -43,7 +43,7 @@ fn solve_part2(input: &Vec<PacketData>) -> u32 {
 		.chain(dividers.iter().cloned())
 		.collect();
 
-	packets.sort_by(|a, b| a.cmp(b));
+	packets.sort();
 
 	packets
 		.iter()
@@ -78,7 +78,7 @@ fn packet_data_value(input: &str) -> IResult<&str, PacketData> {
 	Ok((input, PacketData::Value(value)))
 }
 
-#[derive(Debug, Eq, Clone, PartialOrd)]
+#[derive(Debug, Eq, Clone)]
 pub enum PacketData {
 	Value(u32),
 	List(Vec<PacketData>),
@@ -95,7 +95,7 @@ impl fmt::Display for PacketData {
 	}
 }
 
-impl PartialEq for PacketData {
+impl PartialEq<Self> for PacketData {
 	fn eq(&self, other: &Self) -> bool {
 		match (self, other) {
 			(Self::Value(left), Self::Value(right)) => left == right,
@@ -103,6 +103,12 @@ impl PartialEq for PacketData {
 			(Self::List(left), Self::Value(right)) => *left == vec![PacketData::Value(*right)],
 			(Self::List(left), Self::List(right)) => left == right,
 		}
+	}
+}
+
+impl PartialOrd<Self> for PacketData {
+	fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+		Some(self.cmp(other))
 	}
 }
 

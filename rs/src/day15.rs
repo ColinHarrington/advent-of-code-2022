@@ -14,12 +14,12 @@ fn gen_sensors(input: &'static str) -> Vec<Sensor> {
 }
 
 #[aoc(day15, part1)]
-fn solve_part1(sensors: &Vec<Sensor>) -> u32 {
+fn solve_part1(sensors: &[Sensor]) -> u32 {
 	row_coverage(2000000, sensors)
 }
 
 #[aoc(day15, part2)]
-fn solve_part2(sensors: &Vec<Sensor>) -> i64 {
+fn solve_part2(sensors: &[Sensor]) -> i64 {
 	find_distress_signal(0..=4000000, sensors)
 }
 
@@ -27,10 +27,9 @@ fn tuning_frequency(location: Location) -> i64 {
 	(location.0 as i64) * 4000000 + (location.1 as i64)
 }
 
-fn find_distress_signal(rows: RangeInclusive<i32>, sensors: &Vec<Sensor>) -> i64 {
+fn find_distress_signal(rows: RangeInclusive<i32>, sensors: &[Sensor]) -> i64 {
 	let beacon = rows
 		.clone()
-		.into_iter()
 		.find_map(|row| {
 			sensors
 				.iter()
@@ -49,7 +48,7 @@ fn find_distress_signal(rows: RangeInclusive<i32>, sensors: &Vec<Sensor>) -> i64
 	tuning_frequency(beacon)
 }
 
-fn row_coverage(row: i32, sensors: &Vec<Sensor>) -> u32 {
+fn row_coverage(row: i32, sensors: &[Sensor]) -> u32 {
 	sensors
 		.iter()
 		.filter_map(|sensor| sensor.range_at(row))

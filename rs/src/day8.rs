@@ -11,7 +11,7 @@ fn gen(input: &'static str) -> Vec<Vec<char>> {
 
 #[aoc(day8, part1)]
 fn solve_part1(rows: &TreeRows) -> u32 {
-	let columns: TreeRows = transpose(&rows);
+	let columns: TreeRows = transpose(rows);
 	let visibility_plot = visibility_plot(rows, &columns);
 
 	visibility_plot
@@ -25,20 +25,18 @@ fn solve_part2(trees: &TreeRows) -> u32 {
 	trees
 		.iter()
 		.enumerate()
-		.map(|(y, row)| {
+		.flat_map(|(y, row)| {
 			row.iter()
 				.enumerate()
 				.map(|(x, treehouse)| scenic_score(x, y, trees, *treehouse))
 				.collect::<Vec<u32>>()
 		})
-		// .inspect(|o|println!("{:?}",o))
-		.flatten()
 		.max()
 		.unwrap()
 }
 
 fn scenic_score(x: usize, y: usize, trees: &TreeRows, treehouse: char) -> u32 {
-	vec![
+	[
 		up(x, y, trees),
 		down(x, y, trees),
 		left(x, y, trees),
@@ -50,21 +48,21 @@ fn scenic_score(x: usize, y: usize, trees: &TreeRows, treehouse: char) -> u32 {
 }
 
 fn up(x: usize, y: usize, trees: &TreeRows) -> TreeRow {
-	(0..y).into_iter().rev().map(|i| trees[i][x]).collect()
+	(0..y).rev().map(|i| trees[i][x]).collect()
 }
 
 fn down(x: usize, y: usize, trees: &TreeRows) -> TreeRow {
 	let size = trees.len();
-	((y + 1)..size).into_iter().map(|i| trees[i][x]).collect()
+	((y + 1)..size).map(|i| trees[i][x]).collect()
 }
 
 fn left(x: usize, y: usize, trees: &TreeRows) -> TreeRow {
-	(0..x).into_iter().rev().map(|i| trees[y][i]).collect()
+	(0..x).rev().map(|i| trees[y][i]).collect()
 }
 
 fn right(x: usize, y: usize, trees: &TreeRows) -> TreeRow {
 	let size = trees[0].len();
-	((x + 1)..size).into_iter().map(|i| trees[y][i]).collect()
+	((x + 1)..size).map(|i| trees[y][i]).collect()
 }
 
 fn visible_trees(treehouse: char, trees: &TreeRow) -> u32 {

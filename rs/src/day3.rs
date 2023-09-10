@@ -6,11 +6,11 @@ fn gen(input: &'static str) -> Vec<Rucksack> {
 }
 
 #[aoc(day3, part1)]
-fn solve_part1(rucksacks: &Vec<Rucksack>) -> i32 {
+fn solve_part1(rucksacks: &[Rucksack]) -> i32 {
 	rucksacks
 		.iter()
 		.map(|rs| rs.shared_item())
-		.map(|c| item_type_value(c))
+		.map(item_type_value)
 		.sum()
 }
 
@@ -23,7 +23,7 @@ fn gen_two(input: &'static str) -> Vec<String> {
 }
 
 #[aoc(day3, part2)]
-fn solve_part2(lines: &Vec<String>) -> i32 {
+fn solve_part2(lines: &[String]) -> i32 {
 	lines
 		.chunks(3)
 		.map(|c| c.to_vec())
@@ -71,7 +71,7 @@ pub fn common_item(group: Vec<String>) -> char {
 		.unwrap()
 }
 
-pub fn shared_item(s1: &String, s2: &String) -> char {
+pub fn shared_item(s1: &str, s2: &str) -> char {
 	s1.chars().find(|c| s2.contains(*c)).unwrap()
 }
 
@@ -130,10 +130,10 @@ CrZsJsPPZsGzwwsLwLmpwMDw";
 	/// In the above example, the priority of the item type that appears in both compartments of each rucksack is 16 (p), 38 (L), 42 (P), 22 (v), 20 (t), and 19 (s);
 	#[test]
 	fn test_item_value() {
-		for (c, expected) in zip(('a'..='z').into_iter(), (1..=26).into_iter()).into_iter() {
+		for (c, expected) in zip('a'..='z', 1..=26) {
 			assert_eq!(expected, item_type_value(c));
 		}
-		for (c, expected) in zip(('A'..='Z').into_iter(), (27..=52).into_iter()).into_iter() {
+		for (c, expected) in zip('A'..='Z', 27..=52) {
 			assert_eq!(expected, item_type_value(c));
 		}
 

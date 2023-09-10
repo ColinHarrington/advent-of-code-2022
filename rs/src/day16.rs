@@ -21,21 +21,20 @@ fn read_valves(input: &'static str) -> Vec<Valve> {
 }
 
 #[aoc(day16, part1)]
-fn solve_part1(valves: &Vec<Valve>) -> u32 {
-	let volcano = build_volcano(valves.clone());
+fn solve_part1(valves: &[Valve]) -> u32 {
+	let volcano = build_volcano(valves.to_vec());
 
 	volcano.max_pressure(volcano.start_state(30))
 }
 
 #[aoc(day16, part2)]
-fn solve_part2(valves: &Vec<Valve>) -> u32 {
-	build_volcano(valves.clone()).max_combo()
+fn solve_part2(valves: &[Valve]) -> u32 {
+	build_volcano(valves.to_owned()).max_combo()
 }
 
-/// all valve indexes =>
 fn distance_map(
 	distances: HashMap<(ValveLabel, ValveLabel), u32>,
-	valves: &Vec<Valve>,
+	valves: &[Valve],
 ) -> DistanceMap {
 	HashMap::from_iter(
 		distances
@@ -50,16 +49,13 @@ fn distance_map(
 fn build_full_distance_map(valves: Vec<Valve>) -> HashMap<(ValveLabel, ValveLabel), u32> {
 	let valve_map: HashMap<ValveLabel, Valve> =
 		HashMap::from_iter(valves.into_iter().map(|valve| (valve.name, valve.clone())));
-	let edges = valve_map
-		.iter()
-		.map(|(name, valve)| {
-			valve
-				.tunnels
-				.iter()
-				.filter_map(|tunnel| valve_map.get(tunnel))
-				.map(|other| (name.clone(), other.name.clone()))
-		})
-		.flatten();
+	let edges = valve_map.iter().flat_map(|(name, valve)| {
+		valve
+			.tunnels
+			.iter()
+			.filter_map(|tunnel| valve_map.get(tunnel))
+			.map(|other| (*name, other.name))
+	});
 	let graph: UnGraphMap<ValveLabel, u32> = UnGraphMap::from_edges(edges);
 
 	floyd_warshall(&graph, |_| 1u32).unwrap()
@@ -83,12 +79,18 @@ fn build_volcano(all_valves: Vec<Valve>) -> Volcano {
 	Volcano { valves, flows, map }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct State {
 	minutes: u32,
 	current: usize,
 	remaining: u16,
 	pressure: u32,
+}
+
+impl PartialOrd<Self> for State {
+	fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+		Some(self.cmp(other))
+	}
 }
 
 impl Ord for State {
@@ -104,7 +106,6 @@ impl State {
 
 	fn remaining(&self, valve_count: usize) -> Vec<usize> {
 		(0..valve_count)
-			.into_iter()
 			.filter(|valve| self.remains(valve))
 			.collect()
 	}
@@ -216,7 +217,7 @@ impl Volcano {
 	fn generate_remaining_combinations(&self) -> Vec<(u16, u16)> {
 		let max = 2usize.pow(self.valves.len().sub(1) as u32).sub(1) as u16;
 		let half = max >> 1;
-		(1..=half).into_iter().map(|a| (a, !a & max)).collect_vec()
+		(1..=half).map(|a| (a, !a & max)).collect_vec()
 	}
 }
 

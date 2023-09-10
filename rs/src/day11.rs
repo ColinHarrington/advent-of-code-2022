@@ -29,7 +29,7 @@ fn monkey_business(monkeys: &Vec<Monkey>, rounds: usize, div3: bool) -> u64 {
 		.collect();
 
 	let common_product: u64 = monkeys
-		.into_iter()
+		.iter()
 		.map(|monkey| monkey.test.divisible_by)
 		.product::<u64>();
 

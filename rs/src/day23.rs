@@ -9,7 +9,7 @@ fn elf_map(input: &'static str) -> Vec<Elf> {
 	input
 		.lines()
 		.enumerate()
-		.map(|(row, line)| {
+		.flat_map(|(row, line)| {
 			line.chars()
 				.enumerate()
 				.filter_map(|(column, c)| match c {
@@ -18,15 +18,14 @@ fn elf_map(input: &'static str) -> Vec<Elf> {
 				})
 				.collect::<Vec<Elf>>()
 		})
-		.flatten()
 		.collect::<Vec<Elf>>()
 }
 
 #[aoc(day23, part1)]
-fn solve_part1(elves: &Vec<Elf>) -> i32 {
+fn solve_part1(elves: &[Elf]) -> i32 {
 	let rounds = 10;
 	let mut grove = Grove {
-		field: HashSet::from_iter(elves.clone().into_iter()),
+		field: HashSet::from_iter(elves.iter().cloned()),
 	};
 
 	let mut directions: VecDeque<Direction> = [
@@ -37,7 +36,7 @@ fn solve_part1(elves: &Vec<Elf>) -> i32 {
 	]
 	.into();
 
-	(1..=rounds).into_iter().for_each(|_| {
+	(1..=rounds).for_each(|_| {
 		grove
 			.execute_round(&directions.clone())
 			.into_iter()
@@ -50,9 +49,9 @@ fn solve_part1(elves: &Vec<Elf>) -> i32 {
 }
 
 #[aoc(day23, part2)]
-fn solve_part2(elves: &Vec<Elf>) -> i32 {
+fn solve_part2(elves: &[Elf]) -> i32 {
 	let mut grove = Grove {
-		field: HashSet::from_iter(elves.clone().into_iter()),
+		field: HashSet::from_iter(elves.iter().cloned()),
 	};
 
 	let mut directions: VecDeque<Direction> = [
@@ -107,7 +106,7 @@ impl Elf {
 	/// - If there is no Elf in the S, SE, or SW adjacent positions, the Elf proposes moving south one step.
 	/// - If there is no Elf in the W, NW, or SW adjacent positions, the Elf proposes moving west one step.
 	/// - If there is no Elf in the E, NE, or SE adjacent positions, the Elf proposes moving east one step.
-	fn propose_move(self: &Self, order: &VecDeque<Direction>, grove: &HashSet<Elf>) -> Option<Elf> {
+	fn propose_move(&self, order: &VecDeque<Direction>, grove: &HashSet<Elf>) -> Option<Elf> {
 		//Maybe a bitmask translation?
 		let neighbors: Vec<Elf> = vec![
 			(-1, -1),
@@ -199,11 +198,11 @@ impl Display for Grove {
 }
 
 impl Grove {
-	fn elf_count(self: &Self) -> usize {
+	fn elf_count(&self) -> usize {
 		self.field.len()
 	}
 
-	fn range(self: &Self) -> (RangeInclusive<i32>, RangeInclusive<i32>) {
+	fn range(&self) -> (RangeInclusive<i32>, RangeInclusive<i32>) {
 		(
 			RangeInclusive::new(
 				self.field.iter().map(|e| e.row).min().unwrap(),
@@ -216,7 +215,7 @@ impl Grove {
 		)
 	}
 
-	fn empty_tiles(self: &Self) -> i32 {
+	fn empty_tiles(&self) -> i32 {
 		let (row_range, column_range) = self.range();
 		// dbg!(&row_range,&column_range);
 		(row_range.end() + 1 - row_range.start()) * (column_range.end() + 1 - column_range.start())

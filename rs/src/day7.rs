@@ -55,9 +55,9 @@ fn build_fs(commands: Vec<Command>) -> FileSystem {
 				let path = build_path(&cwd);
 				let size: u32 = entries
 					.into_iter()
-					.filter_map(|e| match e {
-						ListEntry::Dir { name: _ } => Some(0),
-						ListEntry::File { size, name: _ } => Some(size),
+					.map(|e| match e {
+						ListEntry::Dir { name: _ } => 0,
+						ListEntry::File { size, name: _ } => size,
 					})
 					.sum();
 				file_system.insert(path, size);
@@ -100,11 +100,11 @@ enum ListEntry<'b> {
 }
 
 fn parse_terminal(input: &str) -> IResult<&str, Vec<Command>> {
-	Ok(separated_list1(line_ending, command)(input)?)
+	separated_list1(line_ending, command)(input)
 }
 
 fn command(input: &str) -> IResult<&str, Command> {
-	Ok(preceded(tag("$ "), alt((cd_command, ls_command)))(input)?)
+	preceded(tag("$ "), alt((cd_command, ls_command)))(input)
 }
 
 fn cd_command(input: &str) -> IResult<&str, Command> {
@@ -243,11 +243,11 @@ dir e
 	/// (As in this example, this process can count files more than once!)
 	#[test]
 	fn part1() {
-		assert_eq!(95437, solve_part1(&EXAMPLE))
+		assert_eq!(95437, solve_part1(EXAMPLE))
 	}
 
 	#[test]
 	fn part2() {
-		assert_eq!(24933642, solve_part2(&EXAMPLE))
+		assert_eq!(24933642, solve_part2(EXAMPLE))
 	}
 }
