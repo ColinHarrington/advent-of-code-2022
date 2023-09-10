@@ -18,6 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
       - name: Update local toolchain
       - run: rustup update
 
@@ -27,7 +28,6 @@ jobs:
 
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
-
         with:
           name: Rust Benchmark
           tool: 'cargo'
