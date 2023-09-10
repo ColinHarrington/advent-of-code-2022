@@ -76,12 +76,12 @@ mod test {
 	/// so these seem like the most in need of reconsideration. In this example, there are `2` such pairs.
 	#[test]
 	fn example_part1() {
-		assert_eq!(2, solve_part1(&gen(&EXAMPLE)));
+		assert_eq!(2, solve_part1(&gen(EXAMPLE)));
 	}
 
 	/// So, in this example, the number of overlapping assignment pairs is `4`.
 	#[test]
 	fn example_part2() {
-		assert_eq!(4, solve_part2(&gen(&EXAMPLE)));
+		assert_eq!(4, solve_part2(&gen(EXAMPLE)));
 	}
 }
