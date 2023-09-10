@@ -23,9 +23,14 @@ fn read_valves(input: &'static str) -> Vec<Valve> {
 #[aoc(day16, part1)]
 fn solve_part1(valves: &Vec<Valve>) -> u32 {
     let volcano = build_volcano(valves.clone());
-    let (start, remaining) = volcano.start();
 
-    max_pressure(State::initial(30, start, remaining), &volcano)
+    volcano.max_pressure(volcano.start_state(30))
+}
+
+#[aoc(day16, part2)]
+fn solve_part2(valves: &Vec<Valve>) -> u32 {
+    build_volcano(valves.clone())
+        .max_combo()
 }
 
 /// all valve indexes =>
@@ -75,25 +80,6 @@ fn build_volcano(all_valves: Vec<Valve>) -> Volcano {
     }
 }
 
-fn max_pressure(start: State, volcano: &Volcano) -> u32 {
-    let mut best = 0;
-
-    let mut queue: VecDeque<State> = VecDeque::from([start]);
-
-    while let Some(state) = queue.pop_front() {
-        if state.pressure > best {
-            best = state.pressure
-        } else if best > state.upper_bound(&volcano) {
-            continue;
-        }
-        state.remaining(volcano.flows.len())
-            .into_iter()
-            .filter_map(|valve| state.travel(valve, volcano))
-            .for_each(|branch| queue.push_back(branch));
-    }
-    best
-}
-
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd)]
 pub struct State {
     minutes: u32,
@@ -109,14 +95,14 @@ impl Ord for State {
 }
 
 impl State {
-    fn initial(minutes: u32, current: usize, remaining: u16) -> Self {
-        Self {
-            minutes,
-            current,
-            remaining,
-            pressure: 0,
-        }
-    }
+    // fn initial(minutes: u32, current: usize, remaining: u16) -> Self {
+    //     Self {
+    //         minutes,
+    //         current,
+    //         remaining,
+    //         pressure: 0,
+    //     }
+    // }
     fn remains(&self, valve: &usize) -> bool {
         self.remaining & (1u16 << valve) != 0
     }
@@ -179,45 +165,62 @@ impl Volcano {
             .position(|valve| valve.name == name).unwrap()
     }
 
-    fn start(&self) -> (usize, u16) {
-        let start = self.position(['A', 'A']);
+    fn starting_position(&self) -> usize {
+        self.position(['A', 'A'])
+    }
+
+    fn start_state(&self, minutes: u32) -> State {
+        let current = self.position(['A', 'A']);
         let remaining = (0..self.valves.len())
-            .filter(|v| start.ne(v))
+            .filter(|v| current.ne(v))
             .map(|valve| 1 << valve)
             .fold(0, |acc, valve| acc | valve);
-        (start, remaining)
+        State {
+            minutes,
+            current,
+            remaining,
+            pressure: 0,
+        }
     }
-}
 
+    fn max_pressure(&self, start: State) -> u32 {
+        let mut best = 0;
 
-#[aoc(day16, part2)]
-fn solve_part2(valves: &Vec<Valve>) -> u32 {
-    let volcano = build_volcano(valves.clone());
+        let mut queue: VecDeque<State> = VecDeque::from([start]);
 
-    let combos = generate_remaining_combinations(volcano.valves.len());
+        while let Some(state) = queue.pop_front() {
+            if state.pressure > best {
+                best = state.pressure
+            } else if best > state.upper_bound(self) {
+                continue;
+            }
+            state.remaining(self.flows.len())
+                .into_iter()
+                .filter_map(|valve| state.travel(valve, self))
+                .for_each(|branch| queue.push_back(branch));
+        }
+        best
+    }
 
-    max_combo(combos, &volcano)
-}
+    fn max_combo(&self) -> u32 {
+        let start = self.start_state(26);
+        self.generate_remaining_combinations()
+            .into_par_iter()
+            .map(|(remaining, b)| (self.max_pressure(State { remaining, ..start }), b))
+            .map(|(a, remaining)| (a, self.max_pressure(State { remaining, ..start })))
+            .map(|(a, b)| a + b)
+            .max()
+            .unwrap_or(0)
+    }
 
-fn max_combo(combos: Vec<(u16, u16)>, volcano: &Volcano) -> u32 {
-    let start = volcano.start().0;
-    let minutes = 26;
-    combos
-        .into_par_iter()
-        .map(|(a, b)| (max_pressure(State::initial(minutes, start, a), volcano), b))
-        .map(|(a, b)| (a, max_pressure(State::initial(minutes, start, b), volcano)))
-        .map(|(a, b)| a + b)
-        .max().unwrap_or(0)
-}
-
-
-/// Options for splitting the workload into two parts
-fn generate_remaining_combinations(valves: usize) -> Vec<(u16, u16)> {
-    let max = 2usize.pow(valves.sub(1) as u32).sub(1) as u16;
-    let half = max >> 1;
-    (1..=half).into_iter()
-        .map(|a| (a, !a & max))
-        .collect_vec()
+    /// Options for splitting the workload into two parts
+    fn generate_remaining_combinations(&self) -> Vec<(u16, u16)> {
+        let max = 2usize.pow(self.valves.len().sub(1) as u32).sub(1) as u16;
+        let half = max >> 1;
+        (1..=half).into_iter()
+            .map(|a| (a, !a & max))
+            .collect_vec()
+    }
 }
 
 pub type ValveLabel = [char; 2];
