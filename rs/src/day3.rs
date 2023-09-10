@@ -2,12 +2,8 @@ use yaah::*;
 
 #[aoc_generator(day3, part1)]
 fn gen(input: &'static str) -> Vec<Rucksack> {
-    input
-        .lines()
-        .map(Rucksack::new)
-        .collect()
+    input.lines().map(Rucksack::new).collect()
 }
-
 
 #[aoc(day3, part1)]
 fn solve_part1(rucksacks: &Vec<Rucksack>) -> i32 {
@@ -45,7 +41,10 @@ pub struct Rucksack {
 impl Rucksack {
     pub fn new(s: &str) -> Self {
         let (c1, c2) = s.split_at(s.len() / 2);
-        Self { compartment1: c1.to_string(), compartment2: c2.to_string() }
+        Self {
+            compartment1: c1.to_string(),
+            compartment2: c2.to_string(),
+        }
     }
 
     pub fn shared_item(&self) -> char {
@@ -57,29 +56,31 @@ pub fn item_type_value(c: char) -> i32 {
     match c {
         'a'..='z' => c as i32 - 96,
         'A'..='Z' => c as i32 - 38,
-        _ => 0
+        _ => 0,
     }
 }
 
 pub fn common_item(group: Vec<String>) -> char {
-    let (s1, s2, s3) = if let [s1, s2, s3] = group.as_slice() { (s1, s2, s3) } else { panic!() };
-    s1
-        .chars()
+    let (s1, s2, s3) = if let [s1, s2, s3] = group.as_slice() {
+        (s1, s2, s3)
+    } else {
+        panic!()
+    };
+    s1.chars()
         .find(|c| s2.contains(*c) && s3.contains(*c))
         .unwrap()
 }
 
 pub fn shared_item(s1: &String, s2: &String) -> char {
-    s1
-        .chars()
-        .find(|c| s2.contains(*c))
-        .unwrap()
+    s1.chars().find(|c| s2.contains(*c)).unwrap()
 }
 
 #[cfg(test)]
 mod test {
+    use crate::day3::{
+        common_item, gen, gen_two, item_type_value, shared_item, solve_part1, solve_part2, Rucksack,
+    };
     use std::iter::zip;
-    use crate::day3::{common_item, gen, gen_two, item_type_value, Rucksack, shared_item, solve_part1, solve_part2};
 
     const EXAMPLE: &str = r"vJrwpWtwJgWrhcsFMMfFFhFp
 jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL
@@ -120,7 +121,6 @@ CrZsJsPPZsGzwwsLwLmpwMDw";
     fn example_solution() {
         assert_eq!(157, solve_part1(&gen(EXAMPLE)))
     }
-
 
     /// To help prioritize item rearrangement, every item type can be converted to a priority:
     ///
