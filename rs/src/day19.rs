@@ -207,7 +207,7 @@ impl Blueprint {
 								obsidian_bots,
 								minutes_remaining,
 								flags,
-								..*stateBlueprint
+								..*state
 							})
 						} else {
 							None
