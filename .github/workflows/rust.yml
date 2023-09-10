@@ -40,5 +40,5 @@ jobs:
         working-directory: rs
 
       - name: Run tests
-        run: cargo test --verbose
+        run: cargo test --verbose --release
         working-directory: rs
