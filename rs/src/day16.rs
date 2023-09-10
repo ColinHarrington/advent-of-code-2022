@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::collections::{HashMap, VecDeque};
 use std::hash::Hash;
 use std::ops::{Add, Div, Mul, Sub};
@@ -11,6 +12,7 @@ use nom::multi::{separated_list0, separated_list1};
 use nom::sequence::{preceded, tuple};
 use petgraph::algo::floyd_warshall;
 use petgraph::graphmap::UnGraphMap;
+use rayon::iter::{ParallelIterator, IntoParallelIterator};
 use yaah::*;
 
 #[aoc_generator(day16)]
@@ -92,12 +94,18 @@ fn max_pressure(start: State, volcano: &Volcano) -> u32 {
     best
 }
 
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd)]
 pub struct State {
     minutes: u32,
     current: usize,
     remaining: u16,
     pressure: u32,
+}
+
+impl Ord for State {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.pressure.cmp(&other.pressure)
+    }
 }
 
 impl State {
@@ -185,12 +193,32 @@ impl Volcano {
 #[aoc(day16, part2)]
 fn solve_part2(valves: &Vec<Valve>) -> u32 {
     let volcano = build_volcano(valves.clone());
-    let (start, remaining) = volcano.start();
-    let initial_state = State::initial(30, start, remaining);
 
-    max_pressure(initial_state, &volcano)
+    let combos = generate_remaining_combinations(volcano.valves.len());
+
+    max_combo(combos, &volcano)
 }
 
+fn max_combo(combos: Vec<(u16, u16)>, volcano: &Volcano) -> u32 {
+    let start = volcano.start().0;
+    let minutes = 26;
+    combos
+        .into_par_iter()
+        .map(|(a, b)| (max_pressure(State::initial(minutes, start, a), volcano), b))
+        .map(|(a, b)| (a, max_pressure(State::initial(minutes, start, b), volcano)))
+        .map(|(a, b)| a + b)
+        .max().unwrap_or(0)
+}
+
+
+/// Options for splitting the workload into two parts
+fn generate_remaining_combinations(valves: usize) -> Vec<(u16, u16)> {
+    let max = 2usize.pow(valves.sub(1) as u32).sub(1) as u16;
+    let half = max >> 1;
+    (1..=half).into_iter()
+        .map(|a| (a, !a & max))
+        .collect_vec()
+}
 
 pub type ValveLabel = [char; 2];
 
@@ -295,7 +323,7 @@ Valve JJ has flow rate=21; tunnel leads to valve II";
         assert_eq!(1651, solve_part1(&read_valves(EXAMPLE)))
     }
 
-    #[ignore]
+
     #[test]
     fn part2() {
         assert_eq!(1707, solve_part2(&read_valves(EXAMPLE)))
