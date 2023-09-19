@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use nom::branch::alt;
 use nom::character::complete::u8 as nom_u8;
 use nom::character::complete::{char as nom_char, newline, one_of};
@@ -5,8 +6,10 @@ use nom::combinator::map as nom_map;
 use nom::multi::{many1, separated_list1};
 use nom::sequence::{pair, separated_pair};
 use nom::IResult;
+use pathfinding::matrix::Matrix;
+use std::fmt::{Debug, Display, Formatter};
+use std::ops::{Add, Div, Mul, Sub};
 use std::str::FromStr;
-// use pathfinding::matrix::Matrix;
 use yaah::*;
 
 #[aoc(day22, part1)]
@@ -15,17 +18,351 @@ fn solve_part1(monkey_map: &MonkeyMap) -> usize {
 
 	let result = instructions
 		.iter()
-		.fold(board.initial_position(), |pos, instruction| {
-			execute_instruction(instruction, pos, board)
+		.fold(board.initial_position(), |position, instruction| {
+			board.execute_instruction(position, instruction)
 		});
 
 	result.password()
 }
 
-fn execute_instruction(instruction: &Instruction, position: Position, board: &Board) -> Position {
-	match instruction {
-		Instruction::Rotate(r) => position.rotate(r),
-		Instruction::Steps(steps) => position.steps(*steps, board),
+#[aoc(day22, part2)]
+pub fn solve_part2(monkey_map: &MonkeyMap) -> usize {
+	let (board, instructions) = monkey_map;
+
+	let face_size = gcd(board.height, board.width);
+
+	let cube: Cube = board.cube(face_size);
+
+	instructions
+		.iter()
+		.fold(cube.initial_position(), |position, instruction| {
+			cube.execute_instruction(position, instruction)
+		})
+		.password(&cube)
+}
+
+type CubeEdges = [FaceEdgeMapping; 6];
+
+const CUBE_EDGES_4X4: CubeEdges = [
+	FaceEdgeMapping {
+		// 0
+		north: (1, FaceRotation::One80),
+		east: (5, FaceRotation::One80),
+		south: (3, FaceRotation::Same),
+		west: (2, FaceRotation::CW),
+	},
+	FaceEdgeMapping {
+		// 1
+		north: (0, FaceRotation::One80),
+		east: (2, FaceRotation::Same),
+		south: (4, FaceRotation::One80),
+		west: (5, FaceRotation::Ccw),
+	},
+	FaceEdgeMapping {
+		// 2
+		north: (0, FaceRotation::Ccw),
+		east: (3, FaceRotation::Same),
+		south: (4, FaceRotation::CW),
+		west: (1, FaceRotation::Same),
+	},
+	FaceEdgeMapping {
+		// 3
+		north: (0, FaceRotation::Same),
+		east: (5, FaceRotation::Ccw),
+		south: (4, FaceRotation::Same),
+		west: (2, FaceRotation::Same),
+	},
+	FaceEdgeMapping {
+		// 4
+		north: (3, FaceRotation::Same),
+		east: (5, FaceRotation::Same),
+		south: (1, FaceRotation::One80),
+		west: (2, FaceRotation::Ccw),
+	},
+	FaceEdgeMapping {
+		// 5
+		north: (3, FaceRotation::CW),
+		east: (0, FaceRotation::One80),
+		south: (1, FaceRotation::CW),
+		west: (4, FaceRotation::Same),
+	},
+];
+const CUBE_EDGES_50X50: CubeEdges = [
+	FaceEdgeMapping {
+		// 0
+		north: (5, FaceRotation::Ccw),
+		east: (1, FaceRotation::Same),
+		south: (2, FaceRotation::Same),
+		west: (3, FaceRotation::One80),
+	},
+	FaceEdgeMapping {
+		// 1
+		north: (5, FaceRotation::Same),
+		east: (4, FaceRotation::One80),
+		south: (2, FaceRotation::Ccw),
+		west: (0, FaceRotation::Same),
+	},
+	FaceEdgeMapping {
+		// 2
+		north: (0, FaceRotation::Same),
+		east: (1, FaceRotation::CW),
+		south: (4, FaceRotation::Same),
+		west: (3, FaceRotation::CW),
+	},
+	FaceEdgeMapping {
+		// 3
+		north: (2, FaceRotation::Ccw),
+		east: (4, FaceRotation::Same),
+		south: (5, FaceRotation::Same),
+		west: (0, FaceRotation::One80),
+	},
+	FaceEdgeMapping {
+		// 4
+		north: (2, FaceRotation::Same),
+		east: (1, FaceRotation::One80),
+		south: (5, FaceRotation::Ccw),
+		west: (3, FaceRotation::Same),
+	},
+	FaceEdgeMapping {
+		// 5
+		north: (3, FaceRotation::Same),
+		east: (4, FaceRotation::CW),
+		south: (1, FaceRotation::Same),
+		west: (0, FaceRotation::CW),
+	},
+];
+
+fn cube_edges(size: usize) -> CubeEdges {
+	match size {
+		4 => CUBE_EDGES_4X4,
+		50 => CUBE_EDGES_50X50,
+		_ => panic!("Not implemented"),
+	}
+}
+
+type FaceEdgeRotation = (usize, FaceRotation);
+
+#[derive(Debug)]
+pub struct FaceEdgeMapping {
+	north: FaceEdgeRotation,
+	east: FaceEdgeRotation,
+	south: FaceEdgeRotation,
+	west: FaceEdgeRotation,
+}
+
+impl FaceEdgeMapping {
+	fn next(&self, direction: Direction) -> FaceEdgeRotation {
+		match direction {
+			Direction::Up => self.north.clone(),
+			Direction::Down => self.south.clone(),
+			Direction::Left => self.west.clone(),
+			Direction::Right => self.east.clone(),
+		}
+	}
+}
+
+#[derive(Debug, Clone)]
+pub enum FaceRotation {
+	CW,
+	Ccw,
+	One80,
+	Same,
+}
+
+#[derive(Debug, Eq, PartialEq, Clone, Copy)]
+pub struct Position3D {
+	facing: Direction,
+	face: usize,
+	row: usize,
+	column: usize,
+}
+
+/// Not going to reinvent the wheel here.
+/// https://rustp.org/number-theory/lcm/
+fn gcd(mut a: usize, mut b: usize) -> usize {
+	if a == b {
+		return a;
+	}
+	if b > a {
+		std::mem::swap(&mut a, &mut b);
+	}
+	while b > 0 {
+		let temp = a;
+		a = b;
+		b = temp % b;
+	}
+	a
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct CubePosition {
+	face: usize,
+	row: usize,
+	column: usize,
+	facing: Direction,
+}
+
+impl Display for CubePosition {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		write!(
+			f,
+			"[{}:({},{}) {}]",
+			self.face, self.row, self.column, self.facing
+		)
+	}
+}
+
+impl CubePosition {
+	fn rotate(&self, rotation: &Rotation) -> CubePosition {
+		let facing = self.facing.rotate(rotation);
+		CubePosition { facing, ..*self }
+	}
+	fn next_face(&self, cube: &Cube) -> CubePosition {
+		let (face, rotation): FaceEdgeRotation = cube.edges[self.face].next(self.facing);
+		let (row, column, facing) = self.map_around_edge(rotation.clone(), cube.size.sub(1));
+		CubePosition {
+			face,
+			facing,
+			row,
+			column,
+		}
+	}
+	fn map_around_edge(&self, rotation: FaceRotation, max: usize) -> (usize, usize, Direction) {
+		match (self.facing, rotation) {
+			(Direction::Up, FaceRotation::Same) => (max, self.column, Direction::Up),
+			(Direction::Up, FaceRotation::Ccw) => (self.column, 0, Direction::Right),
+			(Direction::Up, FaceRotation::CW) => (max.sub(self.column), max, Direction::Left),
+			(Direction::Up, FaceRotation::One80) => (0, max.sub(self.column), Direction::Down),
+
+			(Direction::Down, FaceRotation::Same) => (0, self.column, Direction::Down),
+			(Direction::Down, FaceRotation::Ccw) => (self.column, max, Direction::Left),
+			(Direction::Down, FaceRotation::CW) => (max.sub(self.column), 0, Direction::Right),
+			(Direction::Down, FaceRotation::One80) => (max, max.sub(self.column), Direction::Up),
+
+			(Direction::Right, FaceRotation::Same) => (self.row, 0, Direction::Right),
+			(Direction::Right, FaceRotation::Ccw) => (0, max.sub(self.row), Direction::Down),
+			(Direction::Right, FaceRotation::CW) => (max, self.row, Direction::Up),
+			(Direction::Right, FaceRotation::One80) => (max.sub(self.row), max, Direction::Left),
+
+			(Direction::Left, FaceRotation::Same) => (self.row, max, Direction::Left),
+			(Direction::Left, FaceRotation::Ccw) => (max, max.sub(self.row), Direction::Up),
+			(Direction::Left, FaceRotation::CW) => (0, self.row, Direction::Down),
+			(Direction::Left, FaceRotation::One80) => (max.sub(self.row), 0, Direction::Right),
+		}
+	}
+
+	fn password(&self, cube: &Cube) -> usize {
+		let (row, column) = cube.board_position(self);
+		1000 * (row + 1) + 4 * (column + 1) + self.facing.value()
+	}
+}
+
+#[derive(Debug)]
+struct Cube {
+	size: usize,
+	faces: [Face; 6],
+	edges: CubeEdges,
+}
+impl Cube {
+	fn initial_position(&self) -> CubePosition {
+		CubePosition {
+			face: 0,
+			row: 0,
+			column: 0,
+			facing: Direction::Right,
+		}
+	}
+	fn execute_instruction(
+		&self,
+		position: CubePosition,
+		instruction: &Instruction,
+	) -> CubePosition {
+		match instruction {
+			Instruction::Rotate(r) => position.rotate(r),
+			Instruction::Steps(steps) => self.steps(position, *steps),
+		}
+	}
+
+	fn steps(&self, position: CubePosition, steps: usize) -> CubePosition {
+		if steps == 0 {
+			position
+		} else {
+			let next = self.step(position.clone());
+			if self.position_open(&next) {
+				self.steps(next, steps.sub(1))
+			} else {
+				position
+			}
+		}
+	}
+	fn step(&self, position: CubePosition) -> CubePosition {
+		let max = self.size - 1;
+		match (position.facing, position.row, position.column) {
+			(Direction::Up, 0, _) => position.next_face(self),
+			(Direction::Up, _, _) => CubePosition {
+				row: position.row.sub(1),
+				..position
+			},
+			(Direction::Down, row, _) if row == max => position.next_face(self),
+			(Direction::Down, _, _) => CubePosition {
+				row: position.row.add(1),
+				..position
+			},
+			(Direction::Left, _, 0) => position.next_face(self),
+			(Direction::Left, _, _) => CubePosition {
+				column: position.column.sub(1),
+				..position
+			},
+			(Direction::Right, _, col) if col == max => position.next_face(self),
+			(Direction::Right, _, _) => CubePosition {
+				column: position.column.add(1),
+				..position
+			},
+		}
+	}
+
+	fn position_open(&self, position: &CubePosition) -> bool {
+		matches!(
+			self.faces[position.face]
+				.data
+				.get((position.row, position.column)),
+			Some(('.', _))
+		)
+	}
+	fn board_position(&self, position: &CubePosition) -> Point2D {
+		self.faces[position.face]
+			.data
+			.get((position.row, position.column))
+			.unwrap()
+			.1
+	}
+}
+
+type Point2D = (usize, usize);
+type TileLocation = (char, Point2D);
+
+#[derive(Debug, Clone)]
+struct Face {
+	data: Matrix<TileLocation>,
+}
+impl Display for Face {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		let lines = (0..self.data.rows)
+			.cartesian_product(0..self.data.columns)
+			.map(|point| self.data.get(point).unwrap())
+			.map(|(tile, _)| tile.to_owned())
+			.collect_vec()
+			.chunks(self.data.columns)
+			.map(|chunk| chunk.to_vec())
+			.map(String::from_iter)
+			.collect_vec();
+		writeln!(f, "{}", lines.join("\n"))
+	}
+}
+
+impl Face {
+	fn has_tiles(&self) -> bool {
+		matches!(self.data.get((0, 0)), Some(('.', _)) | Some(('#', _)))
 	}
 }
 
@@ -117,11 +454,13 @@ impl From<Vec<Vec<char>>> for Board {
 	fn from(lines: Vec<Vec<char>>) -> Self {
 		let width = lines.iter().map(|line| line.len()).max().unwrap();
 		let height = lines.len();
-		Board {
-			map: lines,
-			width,
-			height,
-		}
+
+		let map = lines
+			.into_iter()
+			.map(|line| line.into_iter().pad_using(width, |_| ' ').collect_vec())
+			.collect_vec();
+
+		Board { map, width, height }
 	}
 }
 
@@ -131,7 +470,7 @@ impl Board {
 		let initial = first_row.iter().position(|&t| t == '.').unwrap();
 		Position {
 			facing: Direction::Right,
-			row: initial / self.width,
+			row: 0,
 			column: initial % self.width,
 		}
 	}
@@ -146,7 +485,56 @@ impl Board {
 		.try_into()
 		.unwrap()
 	}
+
+	fn faces(&self, size: usize) -> [Face; 6] {
+		let grid = self.grid();
+		(0..self.height.div(size))
+			.cartesian_product(0..self.width.div(size))
+			.map(|(row, column)| (row.mul(size), column.mul(size)))
+			.map(|(row, column)| {
+				grid.slice(row..(row.add(size)), column..(column.add(size)))
+					.unwrap()
+			})
+			.map(|data| Face { data })
+			.filter(|face| face.has_tiles())
+			.collect_vec()
+			.try_into()
+			.unwrap_or_else(|faces: Vec<Face>| {
+				panic!("Expected a Vec of length 6 but it was {}", faces.len())
+			})
+	}
+
+	fn grid(&self) -> Matrix<TileLocation> {
+		let indexed_grid: Vec<TileLocation> = self
+			.map
+			.iter()
+			.enumerate()
+			.flat_map(|(r, row)| {
+				row.iter()
+					.enumerate()
+					.map(move |(c, tile)| (tile.to_owned(), (r, c)))
+			})
+			.collect_vec();
+
+		Matrix::from_vec(self.height, self.width, indexed_grid).unwrap()
+	}
+	fn cube(&self, size: usize) -> Cube {
+		Cube {
+			size,
+			faces: self.faces(size),
+			edges: cube_edges(size),
+		}
+	}
+
+	fn execute_instruction(&self, position: Position, instruction: &Instruction) -> Position {
+		match instruction {
+			Instruction::Rotate(r) => position.rotate(r),
+			Instruction::Steps(steps) => position.steps(*steps, self),
+		}
+	}
 }
+
+// pub type Facing3d = (i8, i8, i8);
 
 pub enum Tile {
 	Wall,
@@ -174,7 +562,20 @@ enum Direction {
 	Left,
 	Right,
 }
-
+impl Display for Direction {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		write!(
+			f,
+			"{}",
+			match self {
+				Direction::Up => '^',
+				Direction::Down => 'v',
+				Direction::Left => '<',
+				Direction::Right => '>',
+			}
+		)
+	}
+}
 impl Direction {
 	fn rotate(&self, rotation: &Rotation) -> Direction {
 		match rotation {
@@ -210,12 +611,30 @@ pub enum Rotation {
 	Left,
 }
 
+impl Display for Rotation {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		match self {
+			Rotation::Right => write!(f, "R"),
+			Rotation::Left => write!(f, "L"),
+		}
+	}
+}
+
 pub type Instructions = Vec<Instruction>;
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum Instruction {
 	Rotate(Rotation),
 	Steps(usize),
+}
+
+impl Display for Instruction {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		match self {
+			Instruction::Rotate(rotation) => write!(f, "Rotate({rotation})"),
+			Instruction::Steps(steps) => write!(f, "Steps({steps})"),
+		}
+	}
 }
 
 impl FromStr for Rotation {
@@ -283,14 +702,17 @@ fn parse_input(input: &str) -> IResult<&str, (Board, Instructions)> {
 
 #[cfg(test)]
 mod test {
+	use crate::day22::Direction::{Down, Left, Right, Up};
+	use crate::day22::FaceRotation::{Ccw, One80, Same, CW};
 	use crate::day22::Instruction::{Rotate, Steps};
-	use crate::day22::Rotation::{Left, Right};
+	use crate::day22::Rotation;
 	use crate::day22::{
-		execute_instruction, instructions, parse_input, read_monkey_map, solve_part1, Direction,
-		Instruction, Position,
+		instructions, parse_input, read_monkey_map, solve_part1, solve_part2, Cube, CubePosition,
+		Direction, Instruction, Position,
 	};
 	use itertools::Itertools;
 	use std::iter;
+	use std::ops::Sub;
 
 	const EXAMPLE: &str = r"        ...#
         .#..
@@ -310,17 +732,17 @@ mod test {
 	fn example_instructions() -> Vec<Instruction> {
 		vec![
 			Steps(10),
-			Rotate(Right),
+			Rotate(Rotation::Right),
 			Steps(5),
-			Rotate(Left),
+			Rotate(Rotation::Left),
 			Steps(5),
-			Rotate(Right),
+			Rotate(Rotation::Right),
 			Steps(10),
-			Rotate(Left),
+			Rotate(Rotation::Left),
 			Steps(4),
-			Rotate(Right),
+			Rotate(Rotation::Right),
 			Steps(5),
-			Rotate(Left),
+			Rotate(Rotation::Left),
 			Steps(5),
 		]
 	}
@@ -351,7 +773,7 @@ mod test {
 			Position {
 				row: 0,
 				column: 8,
-				facing: Direction::Right
+				facing: Direction::Right,
 			}
 		);
 
@@ -361,10 +783,109 @@ mod test {
 				row,
 				column,
 			};
-			position = execute_instruction(&instruction, position, &board);
-			// println!("{:?} == {:?}", expected, position);
+			position = board.execute_instruction(position, &instruction);
 			assert_eq!(position, expected);
 		}
+	}
+
+	#[test]
+	fn test_next_face() {
+		let (board, _) = read_monkey_map(EXAMPLE);
+		let cube = board.cube(4);
+
+		let max = cube.size.sub(1);
+		let tests = vec![
+			((Up, Same, 0usize, 0usize), (max, 0usize, Up)),
+			((Up, Same, 0, 3), (3, 3, Up)),
+			((Up, Ccw, 0, 0), (0, 0, Right)),
+			((Up, Ccw, 0, 3), (3, 0, Right)),
+			((Up, CW, 0, 0), (3, 3, Left)),
+			((Up, CW, 0, 3), (0, 3, Left)),
+			((Up, One80, 0, 0), (0, 3, Down)),
+			((Up, One80, 0, 3), (0, 0, Down)),
+			((Down, Same, 3, 0), (0, 0, Down)),
+			((Down, Same, 3, 3), (0, 3, Down)),
+			((Down, Ccw, 3, 0), (0, 3, Left)),
+			((Down, Ccw, 3, 3), (3, 3, Left)),
+			((Down, CW, 3, 0), (3, 0, Right)),
+			((Down, CW, 3, 3), (0, 0, Right)),
+			((Down, One80, 3, 0), (3, 3, Up)),
+			((Down, One80, 3, 3), (3, 0, Up)),
+			((Right, Same, 0, 3), (0, 0, Right)),
+			((Right, Same, 3, 3), (3, 0, Right)),
+			((Right, Ccw, 0, 3), (0, 3, Down)),
+			((Right, Ccw, 3, 3), (0, 0, Down)),
+			((Right, CW, 0, 3), (3, 0, Up)),
+			((Right, CW, 3, 3), (3, 3, Up)),
+			((Right, One80, 0, 3), (3, 3, Left)),
+			((Right, One80, 3, 3), (0, 3, Left)),
+			((Left, Same, 0, 0), (0, 3, Left)),
+			((Left, Same, 3, 0), (3, 3, Left)),
+			((Left, Ccw, 0, 0), (3, 3, Up)),
+			((Left, Ccw, 3, 0), (3, 0, Up)),
+			((Left, CW, 0, 0), (0, 0, Down)),
+			((Left, CW, 3, 0), (0, 3, Down)),
+			((Left, One80, 0, 0), (3, 0, Right)),
+			((Left, One80, 3, 0), (0, 0, Right)),
+		];
+		for ((facing, rotation, row, column), expected) in tests {
+			let position = CubePosition {
+				face: 1,
+				facing,
+				row,
+				column,
+			};
+			assert_eq!(expected, position.map_around_edge(rotation, max))
+		}
+	}
+	#[test]
+	fn example_steps_part2() {
+		let (board, instructions) = read_monkey_map(EXAMPLE);
+		let cube: Cube = board.cube(4);
+
+		let expected_positions: Vec<(usize, usize, usize, Direction)> = vec![
+			(0, 0, 2, Right),
+			(0, 0, 2, Down),
+			(3, 1, 2, Down),
+			(3, 1, 2, Right),
+			(5, 2, 2, Down),
+			(5, 2, 2, Left),
+			(4, 2, 2, Left),
+			(4, 2, 2, Down),
+			(1, 1, 1, Up),
+			(1, 1, 1, Right),
+			(2, 1, 2, Right),
+			(2, 1, 2, Up),
+			(2, 0, 2, Up),
+			(2, 0, 2, Up),
+		];
+
+		let mut position = cube.initial_position();
+		assert_eq!(
+			position,
+			CubePosition {
+				face: 0,
+				row: 0,
+				column: 0,
+				facing: Direction::Right,
+			}
+		);
+
+		for (instruction, (step, (face, row, column, facing))) in
+			iter::zip(instructions, expected_positions.into_iter().enumerate())
+		{
+			let expected = CubePosition {
+				face,
+				facing,
+				row,
+				column,
+			};
+			println!("step:{step} | {position} => {instruction}");
+			position = cube.execute_instruction(position, &instruction);
+			println!("step:{step} | {expected} == {position}");
+			assert_eq!(position, expected);
+		}
+		assert_eq!(5031, position.password(&cube));
 	}
 
 	/// In the above example, the final row is 6, the final column is 8, and the final facing is 0.
@@ -375,20 +896,26 @@ mod test {
 		assert_eq!(solve_part1(&monkey_map), 6032)
 	}
 
+	#[test]
+	fn part2() {
+		let monkey_map = read_monkey_map(EXAMPLE);
+		assert_eq!(solve_part2(&monkey_map), 5031)
+	}
+
 	/// Facing is 0 for right (>), 1 for down (v), 2 for left (<), and 3 for up (^).
 	#[test]
 	fn facing_value() {
-		assert_eq!(Direction::Right.value(), 0);
-		assert_eq!(Direction::Down.value(), 1);
-		assert_eq!(Direction::Left.value(), 2);
-		assert_eq!(Direction::Up.value(), 3);
+		assert_eq!(Right.value(), 0);
+		assert_eq!(Down.value(), 1);
+		assert_eq!(Left.value(), 2);
+		assert_eq!(Up.value(), 3);
 	}
 
 	/// The final password is the sum of 1000 times the row, 4 times the column, and the facing.
 	#[test]
 	fn test_final_password() {
 		let position = Position {
-			facing: Direction::Right,
+			facing: Right,
 			row: 5,
 			column: 7,
 		};
@@ -404,7 +931,7 @@ mod test {
 		let expected_initial_position = Position {
 			row: 0,
 			column: 8,
-			facing: Direction::Right,
+			facing: Right,
 		};
 		assert_eq!(pos, expected_initial_position)
 	}
@@ -415,7 +942,7 @@ mod test {
 		assert_eq!("", tail);
 		assert_eq!(instructions, example_instructions());
 		assert_eq!(board.map.len(), 12);
-		assert_eq!(board.map[1], "        .#..".chars().collect_vec());
+		assert_eq!(board.map[1], "        .#..    ".chars().collect_vec());
 	}
 
 	#[test]
