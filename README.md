@@ -5,6 +5,8 @@ See [rs/README.md](https://github.com/ColinHarrington/advent-of-code-2022/tree/m
 
 Merry Christmas!!
 
+[Benchmarks](https://colinharrington.github.io/advent-of-code-2022/bench/)
+
 | Day                       |    Part 1 |    Part 2 |
 |---------------------------|----------:|----------:|
 | [Day 1](rs/src/day1.rs)   | 846.25 ns | 41.266 µs |
@@ -32,5 +34,3 @@ Merry Christmas!!
 | [Day 23](rs/src/day23.rs) | 7.0044 ms | 599.43 ms |
 | [Day 24](rs/src/day24.rs) |  1.2002 s |  1.2912 s |
 | [Day 25](rs/src/day25.rs) | 37.359 µs |    :star: |
-
-[Benchmarks](https://colinharrington.github.io/advent-of-code-2022/bench/)
