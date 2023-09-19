@@ -23,7 +23,7 @@ jobs:
         run: rustup update
 
       - name: Run benchmark
-        run: cargo bench --bench aoc-bench -- --output-format bencher | tee output.txt
+        run: cargo bench --bench aoc-bench -- --quick --quiet | tee output.txt
         working-directory: rs
 
       - name: Store benchmark result
@@ -36,4 +36,4 @@ jobs:
           auto-push: false
 
       - name: Push benchmark result
-        run: git push gh-pages:gh-pages
+        run: git remote -v && git push origin gh-pages:gh-pages
