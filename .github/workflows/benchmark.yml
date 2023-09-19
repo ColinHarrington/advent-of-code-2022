@@ -32,7 +32,7 @@ jobs:
           name: Rust Benchmark
           tool: 'cargo'
           output-file-path: rs/output.txt
-          benchmark-data-dir-path: "/docs/bench"
+          benchmark-data-dir-path: "docs/bench"
           auto-push: false
 
       - name: Push benchmark result
