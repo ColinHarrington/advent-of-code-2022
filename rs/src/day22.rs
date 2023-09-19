@@ -56,11 +56,11 @@ const CUBE_EDGES_4X4: CubeEdges = [
 		north: (0, FaceRotation::One80),
 		east: (2, FaceRotation::Same),
 		south: (4, FaceRotation::One80),
-		west: (5, FaceRotation::CCW),
+		west: (5, FaceRotation::Ccw),
 	},
 	FaceEdgeMapping {
 		// 2
-		north: (0, FaceRotation::CCW),
+		north: (0, FaceRotation::Ccw),
 		east: (3, FaceRotation::Same),
 		south: (4, FaceRotation::CW),
 		west: (1, FaceRotation::Same),
@@ -68,7 +68,7 @@ const CUBE_EDGES_4X4: CubeEdges = [
 	FaceEdgeMapping {
 		// 3
 		north: (0, FaceRotation::Same),
-		east: (5, FaceRotation::CCW),
+		east: (5, FaceRotation::Ccw),
 		south: (4, FaceRotation::Same),
 		west: (2, FaceRotation::Same),
 	},
@@ -77,7 +77,7 @@ const CUBE_EDGES_4X4: CubeEdges = [
 		north: (3, FaceRotation::Same),
 		east: (5, FaceRotation::Same),
 		south: (1, FaceRotation::One80),
-		west: (2, FaceRotation::CCW),
+		west: (2, FaceRotation::Ccw),
 	},
 	FaceEdgeMapping {
 		// 5
@@ -90,7 +90,7 @@ const CUBE_EDGES_4X4: CubeEdges = [
 const CUBE_EDGES_50X50: CubeEdges = [
 	FaceEdgeMapping {
 		// 0
-		north: (5, FaceRotation::CCW),
+		north: (5, FaceRotation::Ccw),
 		east: (1, FaceRotation::Same),
 		south: (2, FaceRotation::Same),
 		west: (3, FaceRotation::One80),
@@ -99,7 +99,7 @@ const CUBE_EDGES_50X50: CubeEdges = [
 		// 1
 		north: (5, FaceRotation::Same),
 		east: (4, FaceRotation::One80),
-		south: (2, FaceRotation::CCW),
+		south: (2, FaceRotation::Ccw),
 		west: (0, FaceRotation::Same),
 	},
 	FaceEdgeMapping {
@@ -111,7 +111,7 @@ const CUBE_EDGES_50X50: CubeEdges = [
 	},
 	FaceEdgeMapping {
 		// 3
-		north: (2, FaceRotation::CCW),
+		north: (2, FaceRotation::Ccw),
 		east: (4, FaceRotation::Same),
 		south: (5, FaceRotation::Same),
 		west: (0, FaceRotation::One80),
@@ -120,7 +120,7 @@ const CUBE_EDGES_50X50: CubeEdges = [
 		// 4
 		north: (2, FaceRotation::Same),
 		east: (1, FaceRotation::One80),
-		south: (5, FaceRotation::CCW),
+		south: (5, FaceRotation::Ccw),
 		west: (3, FaceRotation::Same),
 	},
 	FaceEdgeMapping {
@@ -164,7 +164,7 @@ impl FaceEdgeMapping {
 #[derive(Debug, Clone)]
 pub enum FaceRotation {
 	CW,
-	CCW,
+	Ccw,
 	One80,
 	Same,
 }
@@ -230,22 +230,22 @@ impl CubePosition {
 	fn map_around_edge(&self, rotation: FaceRotation, max: usize) -> (usize, usize, Direction) {
 		match (self.facing, rotation) {
 			(Direction::Up, FaceRotation::Same) => (max, self.column, Direction::Up),
-			(Direction::Up, FaceRotation::CCW) => (self.column, 0, Direction::Right),
+			(Direction::Up, FaceRotation::Ccw) => (self.column, 0, Direction::Right),
 			(Direction::Up, FaceRotation::CW) => (max.sub(self.column), max, Direction::Left),
 			(Direction::Up, FaceRotation::One80) => (0, max.sub(self.column), Direction::Down),
 
 			(Direction::Down, FaceRotation::Same) => (0, self.column, Direction::Down),
-			(Direction::Down, FaceRotation::CCW) => (self.column, max, Direction::Left),
+			(Direction::Down, FaceRotation::Ccw) => (self.column, max, Direction::Left),
 			(Direction::Down, FaceRotation::CW) => (max.sub(self.column), 0, Direction::Right),
 			(Direction::Down, FaceRotation::One80) => (max, max.sub(self.column), Direction::Up),
 
 			(Direction::Right, FaceRotation::Same) => (self.row, 0, Direction::Right),
-			(Direction::Right, FaceRotation::CCW) => (0, max.sub(self.row), Direction::Down),
+			(Direction::Right, FaceRotation::Ccw) => (0, max.sub(self.row), Direction::Down),
 			(Direction::Right, FaceRotation::CW) => (max, self.row, Direction::Up),
 			(Direction::Right, FaceRotation::One80) => (max.sub(self.row), max, Direction::Left),
 
 			(Direction::Left, FaceRotation::Same) => (self.row, max, Direction::Left),
-			(Direction::Left, FaceRotation::CCW) => (max, max.sub(self.row), Direction::Up),
+			(Direction::Left, FaceRotation::Ccw) => (max, max.sub(self.row), Direction::Up),
 			(Direction::Left, FaceRotation::CW) => (0, self.row, Direction::Down),
 			(Direction::Left, FaceRotation::One80) => (max.sub(self.row), 0, Direction::Right),
 		}
@@ -322,9 +322,12 @@ impl Cube {
 	}
 
 	fn position_open(&self, position: &CubePosition) -> bool {
-		matches!(self.faces[position.face]
-             .data
-             .get((position.row, position.column)), Some(('.', _)))
+		matches!(
+			self.faces[position.face]
+				.data
+				.get((position.row, position.column)),
+			Some(('.', _))
+		)
 	}
 	fn board_position(&self, position: &CubePosition) -> Point2D {
 		self.faces[position.face]
@@ -700,7 +703,7 @@ fn parse_input(input: &str) -> IResult<&str, (Board, Instructions)> {
 #[cfg(test)]
 mod test {
 	use crate::day22::Direction::{Down, Left, Right, Up};
-	use crate::day22::FaceRotation::{One80, Same, CCW, CW};
+	use crate::day22::FaceRotation::{One80, Same, Ccw, CW};
 	use crate::day22::Instruction::{Rotate, Steps};
 	use crate::day22::Rotation;
 	use crate::day22::{
@@ -794,32 +797,32 @@ mod test {
 		let tests = vec![
 			((Up, Same, 0usize, 0usize), (max, 0usize, Up)),
 			((Up, Same, 0, 3), (3, 3, Up)),
-			((Up, CCW, 0, 0), (0, 0, Right)),
-			((Up, CCW, 0, 3), (3, 0, Right)),
+			((Up, Ccw, 0, 0), (0, 0, Right)),
+			((Up, Ccw, 0, 3), (3, 0, Right)),
 			((Up, CW, 0, 0), (3, 3, Left)),
 			((Up, CW, 0, 3), (0, 3, Left)),
 			((Up, One80, 0, 0), (0, 3, Down)),
 			((Up, One80, 0, 3), (0, 0, Down)),
 			((Down, Same, 3, 0), (0, 0, Down)),
 			((Down, Same, 3, 3), (0, 3, Down)),
-			((Down, CCW, 3, 0), (0, 3, Left)),
-			((Down, CCW, 3, 3), (3, 3, Left)),
+			((Down, Ccw, 3, 0), (0, 3, Left)),
+			((Down, Ccw, 3, 3), (3, 3, Left)),
 			((Down, CW, 3, 0), (3, 0, Right)),
 			((Down, CW, 3, 3), (0, 0, Right)),
 			((Down, One80, 3, 0), (3, 3, Up)),
 			((Down, One80, 3, 3), (3, 0, Up)),
 			((Right, Same, 0, 3), (0, 0, Right)),
 			((Right, Same, 3, 3), (3, 0, Right)),
-			((Right, CCW, 0, 3), (0, 3, Down)),
-			((Right, CCW, 3, 3), (0, 0, Down)),
+			((Right, Ccw, 0, 3), (0, 3, Down)),
+			((Right, Ccw, 3, 3), (0, 0, Down)),
 			((Right, CW, 0, 3), (3, 0, Up)),
 			((Right, CW, 3, 3), (3, 3, Up)),
 			((Right, One80, 0, 3), (3, 3, Left)),
 			((Right, One80, 3, 3), (0, 3, Left)),
 			((Left, Same, 0, 0), (0, 3, Left)),
 			((Left, Same, 3, 0), (3, 3, Left)),
-			((Left, CCW, 0, 0), (3, 3, Up)),
-			((Left, CCW, 3, 0), (3, 0, Up)),
+			((Left, Ccw, 0, 0), (3, 3, Up)),
+			((Left, Ccw, 3, 0), (3, 0, Up)),
 			((Left, CW, 0, 0), (0, 0, Down)),
 			((Left, CW, 3, 0), (0, 3, Down)),
 			((Left, One80, 0, 0), (3, 0, Right)),
