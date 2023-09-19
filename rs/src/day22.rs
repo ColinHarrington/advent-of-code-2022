@@ -188,16 +188,14 @@ fn gcd(mut a: usize, mut b: usize) -> usize {
 		return a;
 	}
 	if b > a {
-		let temp = a;
-		a = b;
-		b = temp;
+		std::mem::swap(&mut a, &mut b);
 	}
 	while b > 0 {
 		let temp = a;
 		a = b;
 		b = temp % b;
 	}
-	return a;
+	a
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -285,9 +283,9 @@ impl Cube {
 		} else {
 			let next = self.step(position.clone());
 			if self.position_open(&next) {
-				return self.steps(next, steps.sub(1));
+				self.steps(next, steps.sub(1))
 			} else {
-				return position;
+				position
 			}
 		}
 	}
@@ -346,15 +344,12 @@ impl Display for Face {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
 		let lines = (0..self.data.rows)
 			.cartesian_product(0..self.data.columns)
-			.into_iter()
 			.map(|point| self.data.get(point).unwrap())
 			.map(|(tile, _)| tile.to_owned())
-			.into_iter()
 			.collect_vec()
 			.chunks(self.data.columns)
-			.into_iter()
 			.map(|chunk| chunk.to_vec())
-			.map(|chunk| String::from_iter(chunk.into_iter()))
+			.map(String::from_iter)
 			.collect_vec();
 		writeln!(f, "{}", lines.join("\n"))
 	}
