@@ -34,8 +34,211 @@ pub fn solve_part2((board, instructions): &MonkeyMap) -> usize {
 		.password(&cube)
 }
 
+#[derive(Debug)]
+struct Cube {
+	size: usize,
+	faces: [Face; 6],
+	edges: CubeEdges,
+}
+impl Cube {
+	fn initial_position(&self) -> CubePosition {
+		CubePosition {
+			face: 0,
+			row: 0,
+			column: 0,
+			facing: Direction::Right,
+		}
+	}
+	fn execute_instruction(
+		&self,
+		position: CubePosition,
+		instruction: &Instruction,
+	) -> CubePosition {
+		match instruction {
+			Instruction::Rotate(r) => position.rotate(r),
+			Instruction::Steps(steps) => self.steps(position, *steps),
+		}
+	}
+
+	fn steps(&self, position: CubePosition, steps: usize) -> CubePosition {
+		if steps == 0 {
+			position
+		} else {
+			let next = self.step(position.clone());
+			if self.position_open(&next) {
+				self.steps(next, steps.sub(1))
+			} else {
+				position
+			}
+		}
+	}
+	fn step(&self, position: CubePosition) -> CubePosition {
+		let max = self.size - 1;
+		match (position.facing, position.row, position.column) {
+			(Direction::Up, 0, _) => position.next_face(self),
+			(Direction::Up, _, _) => CubePosition {
+				row: position.row.sub(1),
+				..position
+			},
+			(Direction::Down, row, _) if row == max => position.next_face(self),
+			(Direction::Down, _, _) => CubePosition {
+				row: position.row.add(1),
+				..position
+			},
+			(Direction::Left, _, 0) => position.next_face(self),
+			(Direction::Left, _, _) => CubePosition {
+				column: position.column.sub(1),
+				..position
+			},
+			(Direction::Right, _, col) if col == max => position.next_face(self),
+			(Direction::Right, _, _) => CubePosition {
+				column: position.column.add(1),
+				..position
+			},
+		}
+	}
+
+	fn position_open(&self, position: &CubePosition) -> bool {
+		matches!(
+			self.faces[position.face]
+				.data
+				.get((position.row, position.column)),
+			Some(('.', _))
+		)
+	}
+	fn board_position(&self, position: &CubePosition) -> Point2D {
+		self.faces[position.face]
+			.data
+			.get((position.row, position.column))
+			.unwrap()
+			.1
+	}
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct CubePosition {
+	face: usize,
+	row: usize,
+	column: usize,
+	facing: Direction,
+}
+
+impl Display for CubePosition {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		write!(
+			f,
+			"[{}:({},{}) {}]",
+			self.face, self.row, self.column, self.facing
+		)
+	}
+}
+
+impl CubePosition {
+	fn rotate(&self, rotation: &Rotation) -> CubePosition {
+		let facing = self.facing.rotate(rotation);
+		CubePosition { facing, ..*self }
+	}
+	fn next_face(&self, cube: &Cube) -> CubePosition {
+		let (face, rotation): FaceEdgeRotation = cube.edges[self.face].next(self.facing);
+		let (row, column, facing) = self.map_around_edge(rotation.clone(), cube.size.sub(1));
+		CubePosition {
+			face,
+			facing,
+			row,
+			column,
+		}
+	}
+	fn map_around_edge(&self, rotation: FaceRotation, max: usize) -> (usize, usize, Direction) {
+		match (self.facing, rotation) {
+			(Direction::Up, FaceRotation::Same) => (max, self.column, Direction::Up),
+			(Direction::Up, FaceRotation::Ccw) => (self.column, 0, Direction::Right),
+			(Direction::Up, FaceRotation::CW) => (max.sub(self.column), max, Direction::Left),
+			(Direction::Up, FaceRotation::One80) => (0, max.sub(self.column), Direction::Down),
+
+			(Direction::Down, FaceRotation::Same) => (0, self.column, Direction::Down),
+			(Direction::Down, FaceRotation::Ccw) => (self.column, max, Direction::Left),
+			(Direction::Down, FaceRotation::CW) => (max.sub(self.column), 0, Direction::Right),
+			(Direction::Down, FaceRotation::One80) => (max, max.sub(self.column), Direction::Up),
+
+			(Direction::Right, FaceRotation::Same) => (self.row, 0, Direction::Right),
+			(Direction::Right, FaceRotation::Ccw) => (0, max.sub(self.row), Direction::Down),
+			(Direction::Right, FaceRotation::CW) => (max, self.row, Direction::Up),
+			(Direction::Right, FaceRotation::One80) => (max.sub(self.row), max, Direction::Left),
+
+			(Direction::Left, FaceRotation::Same) => (self.row, max, Direction::Left),
+			(Direction::Left, FaceRotation::Ccw) => (max, max.sub(self.row), Direction::Up),
+			(Direction::Left, FaceRotation::CW) => (0, self.row, Direction::Down),
+			(Direction::Left, FaceRotation::One80) => (max.sub(self.row), 0, Direction::Right),
+		}
+	}
+
+	fn password(&self, cube: &Cube) -> usize {
+		let (row, column) = cube.board_position(self);
+		1000 * (row + 1) + 4 * (column + 1) + self.facing.value()
+	}
+}
+
+#[derive(Debug, Clone)]
+struct Face {
+	data: Matrix<TileLocation>,
+}
+impl Display for Face {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		let lines = (0..self.data.rows)
+			.cartesian_product(0..self.data.columns)
+			.map(|point| self.data.get(point).unwrap())
+			.map(|(tile, _)| tile.to_owned())
+			.collect_vec()
+			.chunks(self.data.columns)
+			.map(|chunk| chunk.to_vec())
+			.map(String::from_iter)
+			.collect_vec();
+		writeln!(f, "{}", lines.join("\n"))
+	}
+}
+
+impl Face {
+	fn has_tiles(&self) -> bool {
+		matches!(self.data.get((0, 0)), Some(('.', _)) | Some(('#', _)))
+	}
+}
+
+#[derive(Debug, Clone)]
+pub enum FaceRotation {
+	CW,
+	Ccw,
+	One80,
+	Same,
+}
+type FaceEdgeRotation = (usize, FaceRotation);
+
+#[derive(Debug)]
+pub struct FaceEdgeMapping {
+	north: FaceEdgeRotation,
+	east: FaceEdgeRotation,
+	south: FaceEdgeRotation,
+	west: FaceEdgeRotation,
+}
+
+impl FaceEdgeMapping {
+	fn next(&self, direction: Direction) -> FaceEdgeRotation {
+		match direction {
+			Direction::Up => self.north.clone(),
+			Direction::Down => self.south.clone(),
+			Direction::Left => self.west.clone(),
+			Direction::Right => self.east.clone(),
+		}
+	}
+}
 type CubeEdges = [FaceEdgeMapping; 6];
 
+fn cube_edges(size: usize) -> CubeEdges {
+	match size {
+		4 => CUBE_EDGES_4X4,
+		50 => CUBE_EDGES_50X50,
+		_ => panic!("Not implemented"),
+	}
+}
 const CUBE_EDGES_4X4: CubeEdges = [
 	FaceEdgeMapping {
 		// 0
@@ -125,231 +328,8 @@ const CUBE_EDGES_50X50: CubeEdges = [
 	},
 ];
 
-fn cube_edges(size: usize) -> CubeEdges {
-	match size {
-		4 => CUBE_EDGES_4X4,
-		50 => CUBE_EDGES_50X50,
-		_ => panic!("Not implemented"),
-	}
-}
-
-type FaceEdgeRotation = (usize, FaceRotation);
-
-#[derive(Debug)]
-pub struct FaceEdgeMapping {
-	north: FaceEdgeRotation,
-	east: FaceEdgeRotation,
-	south: FaceEdgeRotation,
-	west: FaceEdgeRotation,
-}
-
-impl FaceEdgeMapping {
-	fn next(&self, direction: Direction) -> FaceEdgeRotation {
-		match direction {
-			Direction::Up => self.north.clone(),
-			Direction::Down => self.south.clone(),
-			Direction::Left => self.west.clone(),
-			Direction::Right => self.east.clone(),
-		}
-	}
-}
-
-#[derive(Debug, Clone)]
-pub enum FaceRotation {
-	CW,
-	Ccw,
-	One80,
-	Same,
-}
-
-/// Not going to reinvent the wheel here.
-/// https://rustp.org/number-theory/lcm/
-fn gcd(mut a: usize, mut b: usize) -> usize {
-	if a == b {
-		return a;
-	}
-	if b > a {
-		std::mem::swap(&mut a, &mut b);
-	}
-	while b > 0 {
-		let temp = a;
-		a = b;
-		b = temp % b;
-	}
-	a
-}
-
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct CubePosition {
-	face: usize,
-	row: usize,
-	column: usize,
-	facing: Direction,
-}
-
-impl Display for CubePosition {
-	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		write!(
-			f,
-			"[{}:({},{}) {}]",
-			self.face, self.row, self.column, self.facing
-		)
-	}
-}
-
-impl CubePosition {
-	fn rotate(&self, rotation: &Rotation) -> CubePosition {
-		let facing = self.facing.rotate(rotation);
-		CubePosition { facing, ..*self }
-	}
-	fn next_face(&self, cube: &Cube) -> CubePosition {
-		let (face, rotation): FaceEdgeRotation = cube.edges[self.face].next(self.facing);
-		let (row, column, facing) = self.map_around_edge(rotation.clone(), cube.size.sub(1));
-		CubePosition {
-			face,
-			facing,
-			row,
-			column,
-		}
-	}
-	fn map_around_edge(&self, rotation: FaceRotation, max: usize) -> (usize, usize, Direction) {
-		match (self.facing, rotation) {
-			(Direction::Up, FaceRotation::Same) => (max, self.column, Direction::Up),
-			(Direction::Up, FaceRotation::Ccw) => (self.column, 0, Direction::Right),
-			(Direction::Up, FaceRotation::CW) => (max.sub(self.column), max, Direction::Left),
-			(Direction::Up, FaceRotation::One80) => (0, max.sub(self.column), Direction::Down),
-
-			(Direction::Down, FaceRotation::Same) => (0, self.column, Direction::Down),
-			(Direction::Down, FaceRotation::Ccw) => (self.column, max, Direction::Left),
-			(Direction::Down, FaceRotation::CW) => (max.sub(self.column), 0, Direction::Right),
-			(Direction::Down, FaceRotation::One80) => (max, max.sub(self.column), Direction::Up),
-
-			(Direction::Right, FaceRotation::Same) => (self.row, 0, Direction::Right),
-			(Direction::Right, FaceRotation::Ccw) => (0, max.sub(self.row), Direction::Down),
-			(Direction::Right, FaceRotation::CW) => (max, self.row, Direction::Up),
-			(Direction::Right, FaceRotation::One80) => (max.sub(self.row), max, Direction::Left),
-
-			(Direction::Left, FaceRotation::Same) => (self.row, max, Direction::Left),
-			(Direction::Left, FaceRotation::Ccw) => (max, max.sub(self.row), Direction::Up),
-			(Direction::Left, FaceRotation::CW) => (0, self.row, Direction::Down),
-			(Direction::Left, FaceRotation::One80) => (max.sub(self.row), 0, Direction::Right),
-		}
-	}
-
-	fn password(&self, cube: &Cube) -> usize {
-		let (row, column) = cube.board_position(self);
-		1000 * (row + 1) + 4 * (column + 1) + self.facing.value()
-	}
-}
-
-#[derive(Debug)]
-struct Cube {
-	size: usize,
-	faces: [Face; 6],
-	edges: CubeEdges,
-}
-impl Cube {
-	fn initial_position(&self) -> CubePosition {
-		CubePosition {
-			face: 0,
-			row: 0,
-			column: 0,
-			facing: Direction::Right,
-		}
-	}
-	fn execute_instruction(
-		&self,
-		position: CubePosition,
-		instruction: &Instruction,
-	) -> CubePosition {
-		match instruction {
-			Instruction::Rotate(r) => position.rotate(r),
-			Instruction::Steps(steps) => self.steps(position, *steps),
-		}
-	}
-
-	fn steps(&self, position: CubePosition, steps: usize) -> CubePosition {
-		if steps == 0 {
-			position
-		} else {
-			let next = self.step(position.clone());
-			if self.position_open(&next) {
-				self.steps(next, steps.sub(1))
-			} else {
-				position
-			}
-		}
-	}
-	fn step(&self, position: CubePosition) -> CubePosition {
-		let max = self.size - 1;
-		match (position.facing, position.row, position.column) {
-			(Direction::Up, 0, _) => position.next_face(self),
-			(Direction::Up, _, _) => CubePosition {
-				row: position.row.sub(1),
-				..position
-			},
-			(Direction::Down, row, _) if row == max => position.next_face(self),
-			(Direction::Down, _, _) => CubePosition {
-				row: position.row.add(1),
-				..position
-			},
-			(Direction::Left, _, 0) => position.next_face(self),
-			(Direction::Left, _, _) => CubePosition {
-				column: position.column.sub(1),
-				..position
-			},
-			(Direction::Right, _, col) if col == max => position.next_face(self),
-			(Direction::Right, _, _) => CubePosition {
-				column: position.column.add(1),
-				..position
-			},
-		}
-	}
-
-	fn position_open(&self, position: &CubePosition) -> bool {
-		matches!(
-			self.faces[position.face]
-				.data
-				.get((position.row, position.column)),
-			Some(('.', _))
-		)
-	}
-	fn board_position(&self, position: &CubePosition) -> Point2D {
-		self.faces[position.face]
-			.data
-			.get((position.row, position.column))
-			.unwrap()
-			.1
-	}
-}
-
 type Point2D = (usize, usize);
 type TileLocation = (char, Point2D);
-
-#[derive(Debug, Clone)]
-struct Face {
-	data: Matrix<TileLocation>,
-}
-impl Display for Face {
-	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		let lines = (0..self.data.rows)
-			.cartesian_product(0..self.data.columns)
-			.map(|point| self.data.get(point).unwrap())
-			.map(|(tile, _)| tile.to_owned())
-			.collect_vec()
-			.chunks(self.data.columns)
-			.map(|chunk| chunk.to_vec())
-			.map(String::from_iter)
-			.collect_vec();
-		writeln!(f, "{}", lines.join("\n"))
-	}
-}
-
-impl Face {
-	fn has_tiles(&self) -> bool {
-		matches!(self.data.get((0, 0)), Some(('.', _)) | Some(('#', _)))
-	}
-}
 
 type MonkeyMap = (Board, Instructions);
 
@@ -630,6 +610,23 @@ impl FromStr for Rotation {
 			_ => Err(()),
 		}
 	}
+}
+
+/// Not going to reinvent the wheel here.
+/// https://rustp.org/number-theory/lcm/
+fn gcd(mut a: usize, mut b: usize) -> usize {
+	if a == b {
+		return a;
+	}
+	if b > a {
+		std::mem::swap(&mut a, &mut b);
+	}
+	while b > 0 {
+		let temp = a;
+		a = b;
+		b = temp % b;
+	}
+	a
 }
 
 #[aoc_generator(day22)]
