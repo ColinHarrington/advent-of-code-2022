@@ -13,25 +13,18 @@ use std::str::FromStr;
 use yaah::*;
 
 #[aoc(day22, part1)]
-fn solve_part1(monkey_map: &MonkeyMap) -> usize {
-	let (board, instructions) = monkey_map;
-
-	let result = instructions
+fn solve_part1((board, instructions): &MonkeyMap) -> usize {
+	instructions
 		.iter()
 		.fold(board.initial_position(), |position, instruction| {
 			board.execute_instruction(position, instruction)
-		});
-
-	result.password()
+		})
+		.password()
 }
 
 #[aoc(day22, part2)]
-pub fn solve_part2(monkey_map: &MonkeyMap) -> usize {
-	let (board, instructions) = monkey_map;
-
-	let face_size = gcd(board.height, board.width);
-
-	let cube: Cube = board.cube(face_size);
+pub fn solve_part2((board, instructions): &MonkeyMap) -> usize {
+	let cube: Cube = board.cube(gcd(board.height, board.width));
 
 	instructions
 		.iter()
@@ -167,14 +160,6 @@ pub enum FaceRotation {
 	Ccw,
 	One80,
 	Same,
-}
-
-#[derive(Debug, Eq, PartialEq, Clone, Copy)]
-pub struct Position3D {
-	facing: Direction,
-	face: usize,
-	row: usize,
-	column: usize,
 }
 
 /// Not going to reinvent the wheel here.
@@ -534,8 +519,6 @@ impl Board {
 	}
 }
 
-// pub type Facing3d = (i8, i8, i8);
-
 pub enum Tile {
 	Wall,
 	Open,
@@ -648,15 +631,6 @@ impl FromStr for Rotation {
 		}
 	}
 }
-// type Point2D = (usize,usize);
-// pub struct CubeFace {
-//     grid: Matrix<Point2D>
-// }
-
-// #[derive(Debug, Eq, PartialEq)]
-// pub enum FaceOrientation {
-//     TOP, NORTH, EAST, SOUTH, WEST, BOTTOM
-// }
 
 #[aoc_generator(day22)]
 fn read_monkey_map(input: &'static str) -> MonkeyMap {
