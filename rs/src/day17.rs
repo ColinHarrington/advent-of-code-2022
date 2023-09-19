@@ -317,7 +317,7 @@ mod test {
 		let small = Chamber { grid: small_grid };
 		assert_eq!(1, small.height());
 
-		let grid: Vec<Vec<char>> = vec![
+		let grid: Vec<Vec<char>> = [
 			"..####.", "...#...", "..###..", "####...", "..#....", "..#....",
 		]
 		.iter()
@@ -345,7 +345,7 @@ mod test {
 
 	#[test]
 	fn chamber_display_example() {
-		let grid: Vec<Vec<char>> = vec![
+		let grid: Vec<Vec<char>> = [
 			"..####.", "...#...", "..###..", "####...", "..#....", "..#....",
 		]
 		.iter()

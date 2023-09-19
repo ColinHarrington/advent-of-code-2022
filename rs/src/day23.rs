@@ -321,7 +321,7 @@ mod test {
 		let elves = elf_map(stringy_grove);
 		assert_eq!(22, elves.len());
 
-		let field: HashSet<Elf> = HashSet::from_iter(elves.clone().into_iter());
+		let field: HashSet<Elf> = HashSet::from_iter(elves.clone());
 		let grove = Grove { field };
 		assert_eq!(grove.range(), (0..=10, 1..=12));
 

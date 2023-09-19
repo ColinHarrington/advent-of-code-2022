@@ -78,7 +78,7 @@ mod test {
 
 	#[test]
 	fn parse_example_input() {
-		let expected: Vec<Element> = vec![1, 2, -3, 3, -2, 0, 4]
+		let expected: Vec<Element> = [1, 2, -3, 3, -2, 0, 4]
 			.iter()
 			.enumerate()
 			.map(|(i, &e)| (i, e))
