@@ -256,7 +256,7 @@ C Z";
 		let rounds = gen_day2(EXAMPLE);
 		let mut iter = rounds.iter();
 
-		let definition = vec![
+		let definition = [
 			(Hand::Rock, Hand::Rock, RoundResult::Draw, 4),
 			(Hand::Paper, Hand::Rock, RoundResult::Lose, 1),
 			(Hand::Scissors, Hand::Rock, RoundResult::Win, 7),

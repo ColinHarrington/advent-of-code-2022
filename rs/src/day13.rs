@@ -180,7 +180,7 @@ mod test {
 	fn packet_comparison() {
 		let (_, pairs) = packet_pairs(EXAMPLE).unwrap();
 
-		let expected_results = vec![true, true, false, true, false, true, false, false];
+		let expected_results = [true, true, false, true, false, true, false, false];
 
 		for ((i, (p1, p2)), &expected) in pairs.iter().enumerate().zip(expected_results.iter()) {
 			println!("== Pair {} ==", i + 1);
