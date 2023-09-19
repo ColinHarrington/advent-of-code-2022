@@ -34,7 +34,7 @@ pub fn solve_part2(monkey_map: &MonkeyMap) -> usize {
 	let cube: Cube = board.cube(face_size);
 
 	instructions
-		.into_iter()
+		.iter()
 		.fold(cube.initial_position(), |position, instruction| {
 			cube.execute_instruction(position, instruction)
 		})
@@ -322,13 +322,9 @@ impl Cube {
 	}
 
 	fn position_open(&self, position: &CubePosition) -> bool {
-		match self.faces[position.face]
-			.data
-			.get((position.row, position.column))
-		{
-			Some(('.', _)) => true,
-			_ => false,
-		}
+		matches!(self.faces[position.face]
+             .data
+             .get((position.row, position.column)), Some(('.', _)))
 	}
 	fn board_position(&self, position: &CubePosition) -> Point2D {
 		self.faces[position.face]
