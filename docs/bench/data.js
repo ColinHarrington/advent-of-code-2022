@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1695108328365,
+  "lastUpdate": 1695108451211,
   "repoUrl": "https://github.com/ColinHarrington/advent-of-code-2022",
   "entries": {
     "Rust Benchmark": [
@@ -953,6 +953,324 @@ window.BENCHMARK_DATA = {
             "name": "Day 25 part 1",
             "value": 47240,
             "range": "± 1659",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "colin.harrington@gmail.com",
+            "name": "Colin Harrington",
+            "username": "ColinHarrington"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6cfe3b389ddaa46bc8d1741ed4a4be5e8a3720ad",
+          "message": "Merge pull request #36 from ColinHarrington/readme-bench\n\nLink to benchmarks",
+          "timestamp": "2023-09-19T02:18:55-05:00",
+          "tree_id": "defd7491c182d94ac3ed7fc614a6fbc5b8d54145",
+          "url": "https://github.com/ColinHarrington/advent-of-code-2022/commit/6cfe3b389ddaa46bc8d1741ed4a4be5e8a3720ad"
+        },
+        "date": 1695108450300,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "Day 1 part 1",
+            "value": 1181,
+            "range": "± 4",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 1 part 2",
+            "value": 56790,
+            "range": "± 174",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 2 part 1",
+            "value": 2186,
+            "range": "± 0",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 2 part 2",
+            "value": 2186,
+            "range": "± 0",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 3 part 1",
+            "value": 31830,
+            "range": "± 38",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 3 part 2",
+            "value": 38191,
+            "range": "± 38",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 4 part 1",
+            "value": 197616,
+            "range": "± 76",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 4 part 2",
+            "value": 196367,
+            "range": "± 467",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 5 part 1",
+            "value": 10091,
+            "range": "± 7",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 5 part 2",
+            "value": 43540,
+            "range": "± 12",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 6 part 1",
+            "value": 254923,
+            "range": "± 171",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 6 part 2",
+            "value": 1929741,
+            "range": "± 2246",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 7 part 1",
+            "value": 470693,
+            "range": "± 122",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 7 part 2",
+            "value": 480450,
+            "range": "± 119",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 8 part 1",
+            "value": 454615,
+            "range": "± 96",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 8 part 2",
+            "value": 4228486,
+            "range": "± 490",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 9 part 1",
+            "value": 561983,
+            "range": "± 138",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 9 part 2",
+            "value": 652700,
+            "range": "± 3145",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 10 part 1",
+            "value": 431,
+            "range": "± 0",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 10 part 2",
+            "value": 2254,
+            "range": "± 1",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 11 part 1",
+            "value": 14925,
+            "range": "± 12",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 11 part 2",
+            "value": 10192265,
+            "range": "± 1788",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 12 part 1",
+            "value": 6905025,
+            "range": "± 6358",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 12 part 2",
+            "value": 6025847,
+            "range": "± 2076",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 13 part 1",
+            "value": 3861,
+            "range": "± 11",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 13 part 2",
+            "value": 509698,
+            "range": "± 1058",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 14 part 1",
+            "value": 6251525,
+            "range": "± 3684",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 14 part 2",
+            "value": 260198311,
+            "range": "± 793850",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 15 part 1",
+            "value": 541,
+            "range": "± 0",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 15 part 2",
+            "value": 937084913,
+            "range": "± 212019",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 16 part 1",
+            "value": 2123188,
+            "range": "± 3665",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 16 part 2",
+            "value": 1150970798,
+            "range": "± 48209941",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 17 part 1",
+            "value": 2267595,
+            "range": "± 1095",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 17 part 2",
+            "value": 200781887,
+            "range": "± 122618",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 18 part 1",
+            "value": 522292,
+            "range": "± 232",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 18 part 2",
+            "value": 2430649,
+            "range": "± 1436",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 19 part 1",
+            "value": 40169364,
+            "range": "± 192921",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 19 part 2",
+            "value": 388946168,
+            "range": "± 221263",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 20 part 1",
+            "value": 11193245,
+            "range": "± 15796",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 20 part 2",
+            "value": 120583815,
+            "range": "± 25705",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 21 part 1",
+            "value": 201438,
+            "range": "± 313",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 21 part 2",
+            "value": 1001084,
+            "range": "± 263",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 22 part 1",
+            "value": 506254,
+            "range": "± 110",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 22 part 2",
+            "value": 370361,
+            "range": "± 729",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 23 part 1",
+            "value": 9407061,
+            "range": "± 7896",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 23 part 2",
+            "value": 832685326,
+            "range": "± 7905535",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 24 part 1",
+            "value": 1812991224,
+            "range": "± 19692596",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 24 part 2",
+            "value": 1955089753,
+            "range": "± 23775012",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Day 25 part 1",
+            "value": 50423,
+            "range": "± 27",
             "unit": "ns/iter"
           }
         ]
