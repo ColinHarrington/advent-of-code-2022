@@ -23,7 +23,7 @@ jobs:
         run: rustup update
 
       - name: Run benchmark
-        run: cargo bench --bench aoc-bench -- --quick --quiet --output-format bencher | tee output.txt
+        run: cat output.txt
         working-directory: rs
 
       - name: Store benchmark result

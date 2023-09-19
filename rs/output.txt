@@ -1,0 +1,117 @@
+test Day 1 part 1 ... bench:        1425 ns/iter (+/- 89)
+
+test Day 1 part 2 ... bench:       65755 ns/iter (+/- 5014)
+
+test Day 2 part 1 ... bench:        2635 ns/iter (+/- 145)
+
+test Day 2 part 2 ... bench:        2670 ns/iter (+/- 286)
+
+test Day 3 part 1 ... bench:       32867 ns/iter (+/- 1731)
+
+test Day 3 part 2 ... bench:       42707 ns/iter (+/- 2480)
+
+test Day 4 part 1 ... bench:      249559 ns/iter (+/- 15374)
+
+test Day 4 part 2 ... bench:      237535 ns/iter (+/- 12317)
+
+test Day 5 part 1 ... bench:       12862 ns/iter (+/- 766)
+
+test Day 5 part 2 ... bench:       50352 ns/iter (+/- 2935)
+
+test Day 6 part 1 ... bench:      347458 ns/iter (+/- 16966)
+
+test Day 6 part 2 ... bench:     2812893 ns/iter (+/- 146703)
+
+test Day 7 part 1 ... bench:      552619 ns/iter (+/- 35309)
+
+test Day 7 part 2 ... bench:      562125 ns/iter (+/- 96573)
+
+test Day 8 part 1 ... bench:      543483 ns/iter (+/- 33533)
+
+test Day 8 part 2 ... bench:     4978260 ns/iter (+/- 321266)
+
+test Day 9 part 1 ... bench:      667572 ns/iter (+/- 38592)
+
+test Day 9 part 2 ... bench:      755696 ns/iter (+/- 47216)
+
+test Day 10 part 1 ... bench:         528 ns/iter (+/- 32)
+
+test Day 10 part 2 ... bench:        2782 ns/iter (+/- 151)
+
+test Day 11 part 1 ... bench:       19608 ns/iter (+/- 1353)
+
+test Day 11 part 2 ... bench:    12877347 ns/iter (+/- 649378)
+
+test Day 12 part 1 ... bench:     9291547 ns/iter (+/- 470103)
+
+test Day 12 part 2 ... bench:     7693705 ns/iter (+/- 406467)
+
+test Day 13 part 1 ... bench:        4695 ns/iter (+/- 588)
+
+test Day 13 part 2 ... bench:      595263 ns/iter (+/- 29386)
+
+test Day 14 part 1 ... bench:     8034591 ns/iter (+/- 423235)
+
+
+Warning: Unable to complete 100 samples in 5.0s. You may wish to increase target time to 31.4s, or reduce sample count to 10.
+test Day 14 part 2 ... bench:   315789850 ns/iter (+/- 8361211)
+
+test Day 15 part 1 ... bench:         636 ns/iter (+/- 45)
+
+
+Warning: Unable to complete 100 samples in 5.0s. You may wish to increase target time to 118.5s, or reduce sample count to 10.
+test Day 15 part 2 ... bench:  1066105398 ns/iter (+/- 23346068)
+
+test Day 16 part 1 ... bench:     2236141 ns/iter (+/- 148543)
+
+
+Warning: Unable to complete 100 samples in 5.0s. You may wish to increase target time to 197.2s, or reduce sample count to 10.
+test Day 16 part 2 ... bench:  1989739572 ns/iter (+/- 28473370)
+
+test Day 17 part 1 ... bench:     2537489 ns/iter (+/- 150402)
+
+
+Warning: Unable to complete 100 samples in 5.0s. You may wish to increase target time to 28.0s, or reduce sample count to 10.
+test Day 17 part 2 ... bench:   277475911 ns/iter (+/- 10020381)
+
+test Day 18 part 1 ... bench:      562553 ns/iter (+/- 30855)
+
+test Day 18 part 2 ... bench:     2696437 ns/iter (+/- 161622)
+
+test Day 19 part 1 ... bench:    47892586 ns/iter (+/- 2302068)
+
+
+Warning: Unable to complete 100 samples in 5.0s. You may wish to increase target time to 48.7s, or reduce sample count to 10.
+test Day 19 part 2 ... bench:   465549002 ns/iter (+/- 14613802)
+
+test Day 20 part 1 ... bench:    18915410 ns/iter (+/- 1472450)
+
+
+Warning: Unable to complete 100 samples in 5.0s. You may wish to increase target time to 19.7s, or reduce sample count to 20.
+test Day 20 part 2 ... bench:   200851546 ns/iter (+/- 10053436)
+
+test Day 21 part 1 ... bench:      289887 ns/iter (+/- 17992)
+
+
+Warning: Unable to complete 100 samples in 5.0s. You may wish to increase target time to 6.5s, enable flat sampling, or reduce sample count to 60.
+test Day 21 part 2 ... bench:     1281627 ns/iter (+/- 77429)
+
+test Day 22 part 1 ... bench:      512796 ns/iter (+/- 21664)
+
+test Day 22 part 2 ... bench:      533803 ns/iter (+/- 37322)
+
+test Day 23 part 1 ... bench:    11591172 ns/iter (+/- 746176)
+
+
+Warning: Unable to complete 100 samples in 5.0s. You may wish to increase target time to 108.1s, or reduce sample count to 10.
+test Day 23 part 2 ... bench:  1074401613 ns/iter (+/- 27393872)
+
+
+Warning: Unable to complete 100 samples in 5.0s. You may wish to increase target time to 264.5s, or reduce sample count to 10.
+test Day 24 part 1 ... bench:  2548383695 ns/iter (+/- 117888091)
+
+
+Warning: Unable to complete 100 samples in 5.0s. You may wish to increase target time to 270.0s, or reduce sample count to 10.
+test Day 24 part 2 ... bench:  2832699478 ns/iter (+/- 142118004)
+
+test Day 25 part 1 ... bench:       61974 ns/iter (+/- 4592)
