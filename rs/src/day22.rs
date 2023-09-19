@@ -18,8 +18,8 @@ fn solve_part1(monkey_map: &MonkeyMap) -> usize {
 
 	let result = instructions
 		.iter()
-		.fold(board.initial_position(), |pos, instruction| {
-			board.execute_instruction(instruction, pos)
+		.fold(board.initial_position(), |position, instruction| {
+			board.execute_instruction(position, instruction)
 		});
 
 	result.password()
@@ -34,14 +34,10 @@ pub fn solve_part2(monkey_map: &MonkeyMap) -> usize {
 	let cube: Cube = board.cube(face_size);
 
 	instructions
-		.iter()
-		.fold(
-			cube.initial_position(),
-			|position, instruction| match instruction {
-				Instruction::Rotate(r) => position.rotate(r),
-				Instruction::Steps(steps) => cube.steps(position, *steps),
-			},
-		)
+		.into_iter()
+		.fold(cube.initial_position(), |position, instruction| {
+			cube.execute_instruction(position, instruction)
+		})
 		.password(&cube)
 }
 
@@ -274,6 +270,16 @@ impl Cube {
 			row: 0,
 			column: 0,
 			facing: Direction::Right,
+		}
+	}
+	fn execute_instruction(
+		&self,
+		position: CubePosition,
+		instruction: &Instruction,
+	) -> CubePosition {
+		match instruction {
+			Instruction::Rotate(r) => position.rotate(r),
+			Instruction::Steps(steps) => self.steps(position, *steps),
 		}
 	}
 
@@ -521,7 +527,7 @@ impl Board {
 		}
 	}
 
-	fn execute_instruction(&self, instruction: &Instruction, position: Position) -> Position {
+	fn execute_instruction(&self, position: Position, instruction: &Instruction) -> Position {
 		match instruction {
 			Instruction::Rotate(r) => position.rotate(r),
 			Instruction::Steps(steps) => position.steps(*steps, self),
@@ -703,9 +709,9 @@ mod test {
 	use crate::day22::Rotation;
 	use crate::day22::{
 		instructions, parse_input, read_monkey_map, solve_part1, solve_part2, Cube, CubePosition,
-		Direction, Instruction, Position, Position3D,
+		Direction, Instruction, Position,
 	};
-	use itertools::{assert_equal, Itertools};
+	use itertools::Itertools;
 	use std::iter;
 	use std::ops::Sub;
 
@@ -778,14 +784,14 @@ mod test {
 				row,
 				column,
 			};
-			position = board.execute_instruction(&instruction, position);
+			position = board.execute_instruction(position, &instruction);
 			assert_eq!(position, expected);
 		}
 	}
 
 	#[test]
 	fn test_next_face() {
-		let (board, instructions) = read_monkey_map(EXAMPLE);
+		let (board, _) = read_monkey_map(EXAMPLE);
 		let cube = board.cube(4);
 
 		let max = cube.size.sub(1);
