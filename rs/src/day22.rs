@@ -703,7 +703,7 @@ fn parse_input(input: &str) -> IResult<&str, (Board, Instructions)> {
 #[cfg(test)]
 mod test {
 	use crate::day22::Direction::{Down, Left, Right, Up};
-	use crate::day22::FaceRotation::{One80, Same, Ccw, CW};
+	use crate::day22::FaceRotation::{Ccw, One80, Same, CW};
 	use crate::day22::Instruction::{Rotate, Steps};
 	use crate::day22::Rotation;
 	use crate::day22::{
